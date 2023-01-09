@@ -16,6 +16,9 @@ import {formatI18nPlaceholderName, formatI18nPlaceholderNamesInMap} from './util
 /** Closure uses `goog.getMsg(message)` to lookup translations */
 const GOOG_GET_MSG = 'goog.getMsg';
 
+/** Closure uses `declareIcuTemplate(message)` for ICU messages */
+const DECLARE_ICU_TEMPLATE = 'goog.i18n.messages.declareIcuTemplate';
+
 /**
  * Generates a `goog.getMsg()` statement and reassignment. The template:
  *
@@ -90,7 +93,8 @@ export function createGoogleGetMsgStatements(
   //  */
   // const MSG_... = goog.getMsg(..);
   // I18N_X = MSG_...;
-  const googGetMsgStmt = closureVar.set(o.variable(GOOG_GET_MSG).callFn(args)).toConstDecl();
+  const i18nFunction = message.messageString.startsWith('{') ? DECLARE_ICU_TEMPLATE : GOOG_GET_MSG;
+  const googGetMsgStmt = closureVar.set(o.variable(i18nFunction).callFn(args)).toConstDecl();
   googGetMsgStmt.addLeadingComment(i18nMetaToJSDoc(message));
   const i18nAssignmentStmt = new o.ExpressionStatement(variable.set(closureVar));
   return [googGetMsgStmt, i18nAssignmentStmt];
