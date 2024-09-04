@@ -13,6 +13,7 @@ import {
   producerIncrementEpoch,
   producerNotifyConsumers,
   producerUpdatesAllowed,
+  Reactive,
   REACTIVE_NODE,
   ReactiveNode,
   SIGNAL,
@@ -107,4 +108,21 @@ function signalValueChanged<T>(node: SignalNode<T>): void {
   producerIncrementEpoch();
   producerNotifyConsumers(node);
   postSignalSetFn?.();
+}
+
+/**
+ * A reactive value which notifies consumers of any changes.
+ *
+ * Signals are functions which returns their current value. To access the current value of a signal,
+ * call it.
+ *
+ * Ordinary values can be turned into `Signal`s with the `signal` function.
+ */
+export type Signal<T> = (() => T) & Reactive;
+
+/**
+ * Checks if the given `value` is a reactive `Signal`.
+ */
+export function isSignal(value: unknown): value is Signal<unknown> {
+  return typeof value === 'function' && (value as Signal<unknown>)[SIGNAL] !== undefined;
 }

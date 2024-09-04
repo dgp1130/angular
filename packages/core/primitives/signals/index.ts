@@ -30,10 +30,12 @@ export {
   setActiveConsumer,
 } from './src/graph';
 export {
+  Signal,
   SIGNAL_NODE,
   SignalGetter,
   SignalNode,
   createSignal,
+  isSignal,
   runPostSignalSetFn,
   setPostSignalSetFn,
   signalSetFn,
@@ -41,3 +43,14 @@ export {
 } from './src/signal';
 export {Watch, WatchCleanupFn, WatchCleanupRegisterFn, createWatch} from './src/watch';
 export {setAlternateWeakRefImpl} from './src/weak_ref';
+
+import {formatter} from './src/formatter';
+
+// Required as the signals library is in a separate package, so we need to explicitly ensure the
+// global `ngDevMode` type is defined.
+declare const ngDevMode: boolean | undefined;
+
+if (typeof ngDevMode !== 'undefined' && ngDevMode) {
+  (window as any).devtoolsFormatters ??= [];
+  (window as any).devtoolsFormatters.push(formatter);
+}
