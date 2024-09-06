@@ -74,6 +74,7 @@ export class SamePageMessageBus extends MessageBus<Events> {
         topic,
         args,
         __ignore_ng_zone__: true,
+        __ignore_rif_patching__: true,
       },
       '*',
     );
