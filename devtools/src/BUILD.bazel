@@ -46,6 +46,7 @@ esbuild(
     name = "bundle",
     config = "//devtools/tools/esbuild:esbuild_config_esm",
     entry_points = [":main.ts"],
+    minify = False,
     platform = "browser",
     splitting = True,
     # todo(aleksanderbodurri): here we target es2020 explicitly.

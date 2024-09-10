@@ -49,7 +49,7 @@ esbuild(
     config = "//devtools/tools/esbuild:esbuild_config_esm",
     entry_points = [":main.ts"],
     platform = "browser",
-    splitting = True,
+    splitting = False,
     target = "es2016",
     deps = LINKER_PROCESSED_FW_PACKAGES + [":demo"],
 )
