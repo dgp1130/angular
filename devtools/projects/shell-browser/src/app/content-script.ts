@@ -92,7 +92,7 @@ if (!backendInitialized) {
 }
 
 const proxyEventFromWindowToDevToolsExtension = (event: MessageEvent) => {
-  if (event.source === window && event.data) {
+  if (event.data) {
     try {
       chrome.runtime.sendMessage(event.data);
     } catch (e) {

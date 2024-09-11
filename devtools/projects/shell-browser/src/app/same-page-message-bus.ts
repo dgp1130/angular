@@ -24,7 +24,7 @@ export class SamePageMessageBus extends MessageBus<Events> {
 
   onAny(cb: AnyEventCallback<Events>): () => void {
     const listener: ListenerFn = (e) => {
-      if (e.source !== window || !e.data || !e.data.topic || e.data.source !== this._destination) {
+      if (!e.data || !e.data.topic || e.data.source !== this._destination) {
         return;
       }
       cb(e.data.topic, e.data.args);
@@ -39,7 +39,7 @@ export class SamePageMessageBus extends MessageBus<Events> {
 
   override on<E extends keyof Events>(topic: E, cb: Events[E]): () => void {
     const listener: ListenerFn = (e) => {
-      if (e.source !== window || !e.data || e.data.source !== this._destination || !e.data.topic) {
+      if (!e.data || e.data.source !== this._destination || !e.data.topic) {
         return;
       }
       if (e.data.topic === topic) {
@@ -56,7 +56,7 @@ export class SamePageMessageBus extends MessageBus<Events> {
 
   override once<E extends keyof Events>(topic: E, cb: Events[E]): void {
     const listener: ListenerFn = (e) => {
-      if (e.source !== window || !e.data || e.data.source !== this._destination || !e.data.topic) {
+      if (!e.data || e.data.source !== this._destination || !e.data.topic) {
         return;
       }
       if (e.data.topic === topic) {
