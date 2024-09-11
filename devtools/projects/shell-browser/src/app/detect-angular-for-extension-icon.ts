@@ -46,7 +46,8 @@ function detectAngular(win: Window): void {
       isDebugMode,
       isSupportedAngularVersion,
       isAngularDevTools: true,
-    },
+      frameName: window.frameElement?.id ?? 'top',
+    } as any,
   ]);
 
   setTimeout(() => detectAngular(win), 1000);
