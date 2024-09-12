@@ -29,11 +29,15 @@ export class SamePageMessageBus extends MessageBus<Events> {
       }
       cb(e.data.topic, e.data.args);
     };
-    window.addEventListener('message', listener);
+    window.addEventListener('message', listener, {
+      __ignore_rif_patching__: true,
+    } as any);
     this._listeners.push(listener);
     return () => {
       this._listeners.splice(this._listeners.indexOf(listener), 1);
-      window.removeEventListener('message', listener);
+      window.removeEventListener('message', listener, {
+        __ignore_rif_patching__: true,
+      } as any);
     };
   }
 
@@ -46,11 +50,15 @@ export class SamePageMessageBus extends MessageBus<Events> {
         (cb as any).apply(null, e.data.args);
       }
     };
-    window.addEventListener('message', listener);
+    window.addEventListener('message', listener, {
+      __ignore_rif_patching__: true,
+    } as any);
     this._listeners.push(listener);
     return () => {
       this._listeners.splice(this._listeners.indexOf(listener), 1);
-      window.removeEventListener('message', listener);
+      window.removeEventListener('message', listener, {
+        __ignore_rif_patching__: true,
+      } as any);
     };
   }
 
@@ -62,9 +70,13 @@ export class SamePageMessageBus extends MessageBus<Events> {
       if (e.data.topic === topic) {
         (cb as any).apply(null, e.data.args);
       }
-      window.removeEventListener('message', listener);
+      window.removeEventListener('message', listener, {
+        __ignore_rif_patching__: true,
+      } as any);
     };
-    window.addEventListener('message', listener);
+    window.addEventListener('message', listener, {
+      __ignore_rif_patching__: true,
+    } as any);
   }
 
   override emit<E extends keyof Events>(topic: E, args?: Parameters<Events[E]>): boolean {
@@ -82,7 +94,11 @@ export class SamePageMessageBus extends MessageBus<Events> {
   }
 
   override destroy(): void {
-    this._listeners.forEach((l) => window.removeEventListener('message', l));
+    this._listeners.forEach((l) =>
+      window.removeEventListener('message', l, {
+        __ignore_rif_patching__: true,
+      } as any),
+    );
     this._listeners = [];
   }
 }
