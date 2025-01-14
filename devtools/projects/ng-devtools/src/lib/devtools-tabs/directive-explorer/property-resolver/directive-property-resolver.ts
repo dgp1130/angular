@@ -59,23 +59,31 @@ export class DirectivePropertyResolver {
   );
 
   private _inputsDataSource: PropertyDataSource;
+  private _propsDataSource: PropertyDataSource;
   private _outputsDataSource: PropertyDataSource;
   private _stateDataSource: PropertyDataSource;
+  private _effects: string[];
 
   constructor(
     private _messageBus: MessageBus<Events>,
     private _props: Properties,
     private _directivePosition: DirectivePosition,
   ) {
-    const {inputProps, outputProps, stateProps} = this._classifyProperties();
+    const {inputProps, propsProps, outputProps, stateProps, effects} = this._classifyProperties();
 
     this._inputsDataSource = this._createDataSourceFromProps(inputProps);
+    this._propsDataSource = this._createDataSourceFromProps(propsProps);
     this._outputsDataSource = this._createDataSourceFromProps(outputProps);
     this._stateDataSource = this._createDataSourceFromProps(stateProps);
+    this._effects = effects;
   }
 
   get directiveInputControls(): DirectiveTreeData {
     return getDirectiveControls(this._inputsDataSource);
+  }
+
+  get directivePropsControls(): DirectiveTreeData {
+    return getDirectiveControls(this._propsDataSource);
   }
 
   get directiveOutputControls(): DirectiveTreeData {
@@ -84,6 +92,10 @@ export class DirectivePropertyResolver {
 
   get directiveStateControls(): DirectiveTreeData {
     return getDirectiveControls(this._stateDataSource);
+  }
+
+  get directiveEffects(): string[] {
+    return this._effects;
   }
 
   get directiveMetadata(): DirectiveMetadata | undefined {
@@ -142,13 +154,17 @@ export class DirectivePropertyResolver {
 
   private _classifyProperties(): {
     inputProps: {[name: string]: Descriptor};
+    propsProps: {[name: string]: Descriptor};
     outputProps: {[name: string]: Descriptor};
     stateProps: {[name: string]: Descriptor};
+    effects: string[];
   } {
     const inputLabels: Set<string> = new Set(Object.values(this._props.metadata?.inputs || {}));
+    const propsLabels: Set<string> = new Set(Object.values(this._props.metadata?.props || {}));
     const outputLabels: Set<string> = new Set(Object.values(this._props.metadata?.outputs || {}));
 
     const inputProps = {};
+    const propsProps = {};
     const outputProps = {};
     const stateProps = {};
     let propPointer: {[name: string]: Descriptor};
@@ -158,14 +174,18 @@ export class DirectivePropertyResolver {
         ? inputProps
         : outputLabels.has(propName)
           ? outputProps
-          : stateProps;
+          : propsLabels.has(propName)
+            ? propsProps
+            : stateProps;
       propPointer[propName] = this.directiveProperties[propName];
     });
 
     return {
       inputProps,
+      propsProps,
       outputProps,
       stateProps,
+      effects: this._props.metadata?.effects ?? [],
     };
   }
 }

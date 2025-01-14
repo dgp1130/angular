@@ -50,5 +50,19 @@
         }
       </div>
     }
+    @if (directiveEffects().length > 0) {
+      <mat-expansion-panel [expanded]="true">
+        <mat-expansion-panel-header collapsedHeight="25px" expandedHeight="25px">
+          <mat-panel-title>Effects</mat-panel-title>
+        </mat-expansion-panel-header>
+        <ul>
+          @for (effect of directiveEffects(); track $index) {
+            <li>
+              <a href="#" (click)="inspectEffect($event, effect)">{{ effect }}</a>
+            </li>
+          }
+        </ul>
+      </mat-expansion-panel>
+    }
   </mat-accordion>
 }

@@ -8,7 +8,7 @@
 
 import {CdkDragDrop, moveItemInArray, CdkDropList, CdkDrag} from '@angular/cdk/drag-drop';
 import {Component, computed, forwardRef, input, output} from '@angular/core';
-import {DirectivePosition, SerializedInjectedService} from 'protocol';
+import {DirectivePosition, Framework, SerializedInjectedService} from 'protocol';
 
 import {
   DirectivePropertyResolver,
@@ -40,11 +40,14 @@ export class PropertyViewBodyComponent {
   readonly controller = input.required<DirectivePropertyResolver>();
   readonly directiveInputControls = input.required<DirectiveTreeData>();
   readonly directiveOutputControls = input.required<DirectiveTreeData>();
+  readonly directivePropsControls = input.required<DirectiveTreeData>();
   readonly directiveStateControls = input.required<DirectiveTreeData>();
+  readonly directiveEffects = input.required<string[]>();
+  readonly directiveFramework = input.required<Framework>();
 
   readonly inspect = output<{node: FlatNode; directivePosition: DirectivePosition}>();
 
-  categoryOrder = [0, 1, 2];
+  categoryOrder = [0, 1, 2, 3];
 
   readonly panels = computed<
     {
@@ -64,6 +67,13 @@ export class PropertyViewBodyComponent {
         class: 'cy-inputs',
       },
       {
+        title: 'Props',
+        hidden: this.directivePropsControls().dataSource.data.length === 0,
+        controls: this.directivePropsControls(),
+        documentation: 'https://angular.dev/api/core/input',
+        class: 'cy-inputs',
+      },
+      {
         title: '@Outputs',
         hidden: this.directiveOutputControls().dataSource.data.length === 0,
         controls: this.directiveOutputControls(),
@@ -71,7 +81,7 @@ export class PropertyViewBodyComponent {
         class: 'cy-outputs',
       },
       {
-        title: 'Properties',
+        title: this.directiveFramework() === Framework.Angular ? 'Properties' : 'State',
         hidden: this.directiveStateControls().dataSource.data.length === 0,
         controls: this.directiveStateControls(),
         documentation: 'https://angular.dev/guide/templates/property-binding',
@@ -79,6 +89,13 @@ export class PropertyViewBodyComponent {
       },
     ];
   });
+
+  protected inspectEffect(event: Event, effect: string): void {
+    event.preventDefault();
+
+    const {url, line, col} = effect.match(/(?<url>.*):(?<line>[0-9]+):(?<col>[0-9+])/)!.groups!;
+    chrome.devtools.panels.openResource(url, Number(line), Number(col));
+  }
 
   readonly controlsLoaded = computed(() => {
     return (

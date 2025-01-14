@@ -101,9 +101,21 @@ export interface DirectivesProperties {
 export interface DirectiveMetadata {
   inputs: {[name: string]: string};
   outputs: {[name: string]: string};
+  props: {[name: string]: string};
+  effects: string[];
   encapsulation: ViewEncapsulation;
   onPush: boolean;
+  framework: Framework;
   dependencies?: SerializedInjectedService[];
+}
+
+/** TODO */
+export enum Framework {
+  /** TODO */
+  Angular = 0,
+
+  /** TODO */
+  Wiz = 1,
 }
 
 export interface SerializedInjectedService {

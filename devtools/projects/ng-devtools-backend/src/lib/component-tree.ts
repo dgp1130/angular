@@ -10,6 +10,7 @@ import {
   DirectiveMetadata,
   DirectivesProperties,
   ElementPosition,
+  Framework,
   PropertyQueryTypes,
   SerializedInjectedService,
   SerializedInjector,
@@ -222,8 +223,11 @@ const getDirectiveMetadata = (dir: any): DirectiveMetadata => {
     return {
       inputs: metadata.inputs,
       outputs: metadata.outputs,
+      props: metadata.props,
+      effects: metadata.effects,
       encapsulation: metadata.encapsulation,
       onPush: metadata.changeDetection === ChangeDetectionStrategy.OnPush,
+      framework: metadata.framework,
     };
   }
 
@@ -240,8 +244,11 @@ const getDirectiveMetadata = (dir: any): DirectiveMetadata => {
   return {
     inputs: safelyGrabMetadata(DirectiveMetadataKey.INPUTS),
     outputs: safelyGrabMetadata(DirectiveMetadataKey.OUTPUTS),
+    props: {},
+    effects: [],
     encapsulation: safelyGrabMetadata(DirectiveMetadataKey.ENCAPSULATION),
     onPush: safelyGrabMetadata(DirectiveMetadataKey.ON_PUSH),
+    framework: Framework.Angular,
   };
 };
 

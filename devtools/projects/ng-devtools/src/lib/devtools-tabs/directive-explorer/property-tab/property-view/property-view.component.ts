@@ -30,7 +30,13 @@ export class PropertyViewComponent {
 
   readonly directiveInputControls = computed(() => this.controller()?.directiveInputControls);
 
+  readonly directivePropsControls = computed(() => this.controller()?.directivePropsControls);
+
   readonly directiveOutputControls = computed(() => this.controller()?.directiveOutputControls);
 
   readonly directiveStateControls = computed(() => this.controller()?.directiveStateControls);
+
+  readonly directiveEffects = computed(() => this.controller()?.directiveEffects);
+
+  readonly directiveFramework = computed(() => this.controller()?.directiveMetadata?.framework);
 }

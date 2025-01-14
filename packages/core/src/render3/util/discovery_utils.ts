@@ -233,6 +233,9 @@ export function getDirectives(node: Node): {}[] {
 export interface DirectiveDebugMetadata {
   inputs: Record<string, string>;
   outputs: Record<string, string>;
+  props: Record<string, string>;
+  effects: string[];
+  framework: Framework;
 }
 
 /**
@@ -249,6 +252,15 @@ export interface DirectiveDebugMetadata {
 export interface ComponentDebugMetadata extends DirectiveDebugMetadata {
   encapsulation: ViewEncapsulation;
   changeDetection: ChangeDetectionStrategy;
+}
+
+/** TODO */
+export enum Framework {
+  /** TODO */
+  Angular = 0,
+
+  /** TODO */
+  Wiz = 1,
 }
 
 /**
@@ -276,16 +288,25 @@ export function getDirectiveMetadata(
     return {
       inputs,
       outputs: componentDef.outputs,
+      props: {},
+      effects: [],
       encapsulation: componentDef.encapsulation,
       changeDetection: componentDef.onPush
         ? ChangeDetectionStrategy.OnPush
         : ChangeDetectionStrategy.Default,
+      framework: Framework.Angular,
     };
   }
   const directiveDef = getDirectiveDef(constructor);
   if (directiveDef) {
     const inputs = extractInputDebugMetadata(directiveDef.inputs);
-    return {inputs, outputs: directiveDef.outputs};
+    return {
+      inputs,
+      outputs: directiveDef.outputs,
+      props: {},
+      effects: [],
+      framework: Framework.Angular,
+    };
   }
   return null;
 }
