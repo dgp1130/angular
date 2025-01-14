@@ -37,6 +37,8 @@ import {MatExpansionModule} from '@angular/material/expansion';
   ],
 })
 export class PropertyViewBodyComponent {
+  protected readonly Framework = Framework;
+
   readonly controller = input.required<DirectivePropertyResolver>();
   readonly directiveInputControls = input.required<DirectiveTreeData>();
   readonly directiveOutputControls = input.required<DirectiveTreeData>();
