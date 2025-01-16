@@ -396,6 +396,8 @@ const prepareForestForSerialization = (
 };
 
 function getNodeDIResolutionPath(node: ComponentTreeNode): SerializedInjector[] | undefined {
+  if (!node.component?.isAngularComponent) return undefined;
+
   const nodeInjector = getInjectorFromElementNode(node.nativeElement!);
   if (!nodeInjector) {
     return [];

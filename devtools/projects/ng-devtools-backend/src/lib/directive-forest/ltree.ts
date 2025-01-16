@@ -101,6 +101,7 @@ export class LTreeStrategy {
           name: element,
           isElement: isCustomElement(node),
           instance,
+          isAngularComponent: true,
         };
       } else if (dirMeta) {
         directives.push({

@@ -51,10 +51,26 @@ const extractViewTree = (
       instance: component,
       isElement: isCustomElement(domNode),
       name: domNode.nodeName.toLowerCase(),
+      isAngularComponent: true,
     };
   }
   if (component || componentTreeNode.directives.length) {
     result.push(componentTreeNode);
+  } else if (domNode.tagName.includes('-')) {
+    // Custom element.
+    result.push({
+      component: {
+        instance: domNode,
+        isElement: true,
+        name: domNode.nodeName.toLowerCase(),
+        isAngularComponent: false,
+      },
+      directives: [],
+      children: [],
+      element: domNode.nodeName.toLowerCase(),
+      nativeElement: domNode,
+      hydration: null,
+    });
   }
   if (componentTreeNode.component || componentTreeNode.directives.length) {
     domNode.childNodes.forEach((node) =>

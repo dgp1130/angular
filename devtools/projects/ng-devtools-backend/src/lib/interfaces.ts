@@ -22,6 +22,7 @@ export interface ComponentInstanceType {
   instance: any;
   name: string;
   isElement: boolean;
+  isAngularComponent: boolean;
 }
 
 export interface ComponentTreeNode

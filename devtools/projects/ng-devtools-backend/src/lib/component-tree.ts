@@ -40,19 +40,21 @@ enum ChangeDetectionStrategy {
 
 import {ComponentTreeNode, DirectiveInstanceType, ComponentInstanceType} from './interfaces';
 
-import type {
-  ClassProvider,
-  ExistingProvider,
-  FactoryProvider,
-  InjectOptions,
-  InjectionToken,
-  Injector,
-  Type,
-  ValueProvider,
-  ɵComponentDebugMetadata as ComponentDebugMetadata,
-  ɵProviderRecord as ProviderRecord,
+import {
+  type ClassProvider,
+  type ExistingProvider,
+  type FactoryProvider,
+  type InjectOptions,
+  type InjectionToken,
+  type Injector,
+  type Type,
+  type ValueProvider,
+  type ɵComponentDebugMetadata as ComponentDebugMetadata,
+  type ɵProviderRecord as ProviderRecord,
+  ViewEncapsulation,
 } from '@angular/core';
 import {isSignal} from './utils';
+import {getKeys} from './state-serializer/object-utils';
 
 export const injectorToId = new WeakMap<Injector | HTMLElement, string>();
 export const nodeInjectorToResolutionPath = new WeakMap<HTMLElement, SerializedInjector[]>();
@@ -119,26 +121,32 @@ export const getLatestComponentState = (
         providers: getInjectorProviders(injector),
       }));
   const populateResultSet = (dir: DirectiveInstanceType | ComponentInstanceType) => {
-    const {instance, name} = dir;
-    const metadata = getDirectiveMetadata(instance);
-    metadata.dependencies = getDependenciesForDirective(
-      injector,
-      resolutionPathWithProviders,
-      instance.constructor,
-    );
+    const metadata = getDirectiveMetadata(dir);
+
+    const isComponent = 'isAngularComponent' in dir;
+    if (!isComponent || (dir as ComponentInstanceType).isAngularComponent) {
+      metadata.dependencies = getDependenciesForDirective(
+        injector,
+        resolutionPathWithProviders,
+        dir.instance.constructor,
+      );
+    } else {
+      // TODO: UI should tolerate missing dependencies.
+      metadata.dependencies = [];
+    }
 
     if (query.propertyQuery.type === PropertyQueryTypes.All) {
       directiveProperties[dir.name] = {
-        props: serializeDirectiveState(instance),
+        props: serializeDirectiveState(dir.instance),
         metadata,
       };
     }
 
     if (query.propertyQuery.type === PropertyQueryTypes.Specified) {
-      directiveProperties[name] = {
+      directiveProperties[dir.name] = {
         props: deeplySerializeSelectedProperties(
-          instance,
-          query.propertyQuery.properties[name] || [],
+          dir.instance,
+          query.propertyQuery.properties[dir.name] || [],
         ),
         metadata,
       };
@@ -216,7 +224,31 @@ const enum DirectiveMetadataKey {
 // Gets directive metadata. For newer versions of Angular (v12+) it uses
 // the global `getDirectiveMetadata`. For prior versions of the framework
 // the method directly interacts with the directive/component definition.
-const getDirectiveMetadata = (dir: any): DirectiveMetadata => {
+const getDirectiveMetadata = (
+  dir: DirectiveInstanceType | ComponentInstanceType,
+): DirectiveMetadata => {
+  // Custom elements support.
+  if ('isAngularComponent' in dir && !dir.isAngularComponent) {
+    const customElement = dir.instance as HTMLElement;
+    const propertyNames = getKeys(customElement);
+
+    return {
+      inputs: {},
+      outputs: {},
+      props: propertyNames
+        .filter((prop) => !prop.startsWith('_'))
+        .map((prop) => ({[prop]: prop}))
+        .reduce((l, r) => ({...l, ...r}), {}),
+      effects: [],
+      // Maybe getting a little too cute here...
+      encapsulation: customElement.shadowRoot
+        ? ViewEncapsulation.ShadowDom
+        : ViewEncapsulation.None,
+      onPush: false,
+      framework: Framework.Angular,
+    };
+  }
+
   const getMetadata = ngDebugClient().getDirectiveMetadata;
   const metadata = getMetadata?.(dir) as ComponentDebugMetadata;
   if (metadata) {
@@ -234,7 +266,8 @@ const getDirectiveMetadata = (dir: any): DirectiveMetadata => {
   // Used in older Angular versions, prior to the introduction of `getDirectiveMetadata`.
   const safelyGrabMetadata = (key: DirectiveMetadataKey) => {
     try {
-      return dir.constructor.ɵcmp ? dir.constructor.ɵcmp[key] : dir.constructor.ɵdir[key];
+      const {constructor} = dir.instance;
+      return constructor.ɵcmp ? constructor.ɵcmp[key] : constructor.ɵdir[key];
     } catch {
       console.warn(`Could not find metadata for key: ${key} in directive:`, dir);
       return undefined;
