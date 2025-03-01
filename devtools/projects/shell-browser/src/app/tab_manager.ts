@@ -139,7 +139,13 @@ export class TabManager {
 
     contentScript.backendReady = new Promise((resolveBackendReady) => {
       const onBackendReady = (message: {topic: string}) => {
+        console.debug('[Angular DevTools] Tab Manager received event.', {
+          topic: message.topic,
+          frame: frameId,
+        }); // DEBUG
         if (message.topic === 'backendReady') {
+          console.log('[Angular DevTools] Received backendReady event.', {frame: frameId}); // DEBUG
+
           // If DevTools is not yet connected, this resolve will enable devtools to eventually connect to this
           // content script (even though the content script connected first)
           resolveBackendReady();

@@ -18,8 +18,16 @@ const messageBus = new SamePageMessageBus(
   `angular-devtools-content-script-${location.href}`,
 );
 
+globalThis.devtoolsId ??= Math.floor(Math.random() * 1000);
+declare global {
+  var devtoolsId: number | undefined;
+}
+const frame = window.frameElement
+  ? (window.frameElement.id ?? window.frameElement.getAttribute('src'))
+  : 'top';
 let initialized = false;
 messageBus.on('handshake', () => {
+  console.debug('[AngularDevTools] Backend received handshake.', {frame, devtoolsId}); // DEBUG
   if (initialized) {
     return;
   }
@@ -48,5 +56,8 @@ messageBus.on('handshake', () => {
     false,
   );
 
+  console.log('[Angular DevTools] Sending `backendReady` event.', {frame, devtoolsId}); // DEBUG
   messageBus.emit('backendReady');
 });
+
+console.log('[Angular DevTools] Backend installed.', {frame, devtoolsId}); // DEBUG

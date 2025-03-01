@@ -21,7 +21,12 @@ const detectAngularMessageBus = new SamePageMessageBus(
   `angular-devtools-content-script-${location.href}`,
 );
 
-function detectAngular(win: Window): void {
+globalThis.devtoolsId ??= Math.floor(Math.random() * 1000);
+declare global {
+  var devtoolsId: number | undefined;
+}
+
+function detectAngular(win: Window & typeof globalThis): void {
   const isAngular = appIsAngular();
   const isSupportedAngularVersion = appIsSupportedAngularVersion();
   const isDebugMode = appIsAngularInDevMode();
@@ -39,6 +44,10 @@ function detectAngular(win: Window): void {
   win.postMessage(detection, '*');
 
   // For the content script to inject the backend.
+  const frame = win.frameElement
+    ? (win.frameElement.id ?? win.frameElement.getAttribute('src'))
+    : 'top';
+  console.debug('[Angular DevTools] detect-angular poll.', {frame, devtoolsId, isAngular}); // DEBUG
   detectAngularMessageBus.emit('detectAngular', [
     {
       isIvy,
@@ -53,4 +62,8 @@ function detectAngular(win: Window): void {
   setTimeout(() => detectAngular(win), 1000);
 }
 
+const frame = window.frameElement
+  ? (window.frameElement.id ?? window.frameElement.getAttribute('src'))
+  : 'top';
+console.log('[Angular DevTools] detect-angular installed.', {frame, devtoolsId}); // DEBUG
 detectAngular(window);

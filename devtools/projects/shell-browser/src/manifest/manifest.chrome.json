@@ -52,7 +52,7 @@
       "js": [
         "app/ng_validate_bundle.js"
       ],
-      "run_at": "document_idle",
+      "run_at": "document_start",
       "all_frames": true
     },
     {
@@ -62,7 +62,7 @@
       "js": [
         "app/content_script_bundle.js"
       ],
-      "run_at": "document_idle",
+      "run_at": "document_start",
       "all_frames": true
     }
   ]
