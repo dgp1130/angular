@@ -64,7 +64,7 @@ export function getInjectorId() {
 }
 
 export function getInjectorMetadata(injector: Injector) {
-  return ngDebugClient().ɵgetInjectorMetadata(injector);
+  return ngDebugClient().ɵgetInjectorMetadata!(injector);
 }
 
 export function getInjectorResolutionPath(injector: Injector): Injector[] {
@@ -72,11 +72,11 @@ export function getInjectorResolutionPath(injector: Injector): Injector[] {
     return [];
   }
 
-  return ngDebugClient().ɵgetInjectorResolutionPath(injector);
+  return ngDebugClient().ɵgetInjectorResolutionPath!(injector);
 }
 
 export function getInjectorFromElementNode(element: Node): Injector | null {
-  return ngDebugClient().getInjector(element);
+  return ngDebugClient().getInjector!(element);
 }
 
 function getDirectivesFromElement(element: HTMLElement): {
@@ -85,12 +85,12 @@ function getDirectivesFromElement(element: HTMLElement): {
 } {
   let component = null;
   if (element instanceof Element) {
-    component = ngDebugClient().getComponent(element);
+    component = ngDebugClient().getComponent!(element);
   }
 
   return {
     component,
-    directives: ngDebugClient().getDirectives(element),
+    directives: ngDebugClient().getDirectives!(element),
   };
 }
 
@@ -108,7 +108,7 @@ export const getLatestComponentState = (
 
   const directiveProperties: DirectivesProperties = {};
 
-  const injector = ngDebugClient().getInjector(node.nativeElement!);
+  const injector = ngDebugClient().getInjector!(node.nativeElement!);
 
   const injectors = getInjectorResolutionPath(injector);
   const resolutionPathWithProviders = !ngDebugDependencyInjectionApiIsSupported()
@@ -216,7 +216,7 @@ const enum DirectiveMetadataKey {
 // the global `getDirectiveMetadata`. For prior versions of the framework
 // the method directly interacts with the directive/component definition.
 const getDirectiveMetadata = (dir: any): DirectiveMetadata => {
-  const getMetadata = ngDebugClient().getDirectiveMetadata;
+  const getMetadata = ngDebugClient().getDirectiveMetadata!;
   const metadata = getMetadata?.(dir) as ComponentDebugMetadata;
   if (metadata) {
     return {
@@ -255,7 +255,7 @@ export function getInjectorProviders(injector: Injector) {
     return [];
   }
 
-  return ngDebugClient().ɵgetInjectorProviders(injector);
+  return ngDebugClient().ɵgetInjectorProviders!(injector);
 }
 
 const getDependenciesForDirective = (
@@ -268,7 +268,7 @@ const getDependenciesForDirective = (
   }
 
   let dependencies =
-    ngDebugClient().ɵgetDependenciesFromInjectable(injector, directive)?.dependencies ?? [];
+    ngDebugClient().ɵgetDependenciesFromInjectable!(injector, directive)?.dependencies ?? [];
   const uniqueServices = new Set<string>();
   const serializedInjectedServices: SerializedInjectedService[] = [];
 
@@ -578,7 +578,7 @@ export const updateState = (updatedStateData: UpdatedStateData): void => {
   if (updatedStateData.directiveId.directive !== undefined) {
     const directive = node.directives[updatedStateData.directiveId.directive].instance;
     mutateComponentOrDirective(updatedStateData, directive);
-    ng.applyChanges?.(ng.getOwningComponent(directive)!);
+    ng.applyChanges?.(ng.getOwningComponent!(directive)!);
     return;
   }
   if (node.component) {
