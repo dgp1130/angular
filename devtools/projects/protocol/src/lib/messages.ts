@@ -6,7 +6,15 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {InjectionToken, InjectOptions, Injector, Type, ViewEncapsulation} from '@angular/core';
+import {
+  ɵFramework,
+  ɵAcxViewEncapsulation,
+  InjectionToken,
+  InjectOptions,
+  Injector,
+  Type,
+  ViewEncapsulation,
+} from '@angular/core';
 
 export interface DirectiveType {
   name: string;
@@ -99,13 +107,37 @@ export interface DirectivesProperties {
   [name: string]: Properties;
 }
 
-export interface DirectiveMetadata {
+export interface BaseDirectiveMetadata {
+  framework: ɵFramework;
+}
+
+export interface AngularDirectiveMetadata extends BaseDirectiveMetadata {
+  framework: ɵFramework.Angular;
   inputs: {[name: string]: string};
   outputs: {[name: string]: string};
   encapsulation: ViewEncapsulation;
   onPush: boolean;
   dependencies?: SerializedInjectedService[];
 }
+
+export interface AcxDirectiveMetadata extends BaseDirectiveMetadata {
+  framework: ɵFramework.Acx;
+  inputs: {[name: string]: string};
+  outputs: {[name: string]: string};
+  encapsulation: ɵAcxViewEncapsulation;
+  onPush: boolean;
+}
+
+export interface WizComponentMetadata extends BaseDirectiveMetadata {
+  framework: ɵFramework.Wiz;
+  props: {[name: string]: string};
+  events: {[name: string]: string};
+}
+
+export type DirectiveMetadata =
+  | AngularDirectiveMetadata
+  | AcxDirectiveMetadata
+  | WizComponentMetadata;
 
 export interface SerializedInjectedService {
   token: string;

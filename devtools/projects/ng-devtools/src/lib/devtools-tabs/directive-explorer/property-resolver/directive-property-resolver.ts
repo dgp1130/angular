@@ -7,7 +7,6 @@
  */
 
 import {FlatTreeControl} from '@angular/cdk/tree';
-import {ViewEncapsulation} from '@angular/core';
 import {
   Descriptor,
   DirectiveMetadata,
@@ -59,7 +58,9 @@ export class DirectivePropertyResolver {
   );
 
   private _inputsDataSource: PropertyDataSource;
+  private _propsDataSource: PropertyDataSource;
   private _outputsDataSource: PropertyDataSource;
+  private _eventsDataSource: PropertyDataSource;
   private _stateDataSource: PropertyDataSource;
 
   constructor(
@@ -67,10 +68,12 @@ export class DirectivePropertyResolver {
     private _props: Properties,
     private _directivePosition: DirectivePosition,
   ) {
-    const {inputs, outputs, state} = this._classifyProperties();
+    const {inputs, props, outputs, events, state} = this._classifyProperties();
 
     this._inputsDataSource = this._createDataSourceFromProps(inputs);
+    this._propsDataSource = this._createDataSourceFromProps(props);
     this._outputsDataSource = this._createDataSourceFromProps(outputs);
+    this._eventsDataSource = this._createDataSourceFromProps(events);
     this._stateDataSource = this._createDataSourceFromProps(state);
   }
 
@@ -78,8 +81,16 @@ export class DirectivePropertyResolver {
     return getDirectiveControls(this._inputsDataSource);
   }
 
+  get directivePropsControls(): DirectiveTreeData {
+    return getDirectiveControls(this._propsDataSource);
+  }
+
   get directiveOutputControls(): DirectiveTreeData {
     return getDirectiveControls(this._outputsDataSource);
+  }
+
+  get directiveEventControls(): DirectiveTreeData {
+    return getDirectiveControls(this._eventsDataSource);
   }
 
   get directiveStateControls(): DirectiveTreeData {
@@ -96,14 +107,6 @@ export class DirectivePropertyResolver {
 
   get directivePosition(): DirectivePosition {
     return this._directivePosition;
-  }
-
-  get directiveViewEncapsulation(): ViewEncapsulation | undefined {
-    return this._props.metadata?.encapsulation;
-  }
-
-  get directiveHasOnPushStrategy(): boolean | undefined {
-    return this._props.metadata?.onPush;
   }
 
   getExpandedProperties(): NestedProp[] {
@@ -142,29 +145,52 @@ export class DirectivePropertyResolver {
 
   private _classifyProperties(): {
     inputs: {[name: string]: Descriptor};
+    props: {[name: string]: Descriptor};
     outputs: {[name: string]: Descriptor};
+    events: {[name: string]: Descriptor};
     state: {[name: string]: Descriptor};
   } {
-    const inputLabels: Set<string> = new Set(Object.values(this._props.metadata?.inputs || {}));
-    const outputLabels: Set<string> = new Set(Object.values(this._props.metadata?.outputs || {}));
+    const metadata = this._props.metadata;
+    if (!metadata) {
+      return {
+        inputs: {},
+        props: {},
+        outputs: {},
+        events: {},
+        state: this.directiveProperties,
+      };
+    }
 
-    const inputs = {};
-    const outputs = {};
-    const state = {};
-    let propPointer: {[name: string]: Descriptor};
+    const inputLabels = new Set('inputs' in metadata ? Object.values(metadata.inputs) : []);
+    const propLabels = new Set('props' in metadata ? Object.values(metadata.props) : []);
+    const outputLabels = new Set('outputs' in metadata ? Object.values(metadata.outputs) : []);
+    const eventLabels = new Set('events' in metadata ? Object.values(metadata.events) : []);
 
-    Object.keys(this.directiveProperties).forEach((propName) => {
-      propPointer = inputLabels.has(propName)
-        ? inputs
-        : outputLabels.has(propName)
-          ? outputs
-          : state;
-      propPointer[propName] = this.directiveProperties[propName];
-    });
+    const inputs: {[name: string]: Descriptor} = {};
+    const props: {[name: string]: Descriptor} = {};
+    const outputs: {[name: string]: Descriptor} = {};
+    const events: {[name: string]: Descriptor} = {};
+    const state: {[name: string]: Descriptor} = {};
+
+    for (const [propName, value] of Object.entries(this.directiveProperties)) {
+      if (inputLabels.has(propName)) {
+        inputs[propName] = value;
+      } else if (propLabels.has(propName)) {
+        props[propName] = value;
+      } else if (outputLabels.has(propName)) {
+        outputs[propName] = value;
+      } else if (eventLabels.has(propName)) {
+        events[propName] = value;
+      } else {
+        state[propName] = value;
+      }
+    }
 
     return {
       inputs,
+      props,
       outputs,
+      events,
       state,
     };
   }

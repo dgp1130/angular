@@ -37,6 +37,18 @@ enum ChangeDetectionStrategy {
   Default = 1,
 }
 
+enum AcxChangeDetectionStrategy {
+  // TODO: Is this the correct translation?
+  Default = 0,
+  OnPush = 1,
+}
+
+enum Framework {
+  Angular = 'angular',
+  Acx = 'acx',
+  Wiz = 'wiz',
+}
+
 import {ComponentTreeNode, DirectiveInstanceType, ComponentInstanceType} from './interfaces';
 
 import type {
@@ -122,7 +134,7 @@ export const getLatestComponentState = (
   const populateResultSet = (dir: DirectiveInstanceType | ComponentInstanceType) => {
     const {instance, name} = dir;
     const metadata = getDirectiveMetadata(instance);
-    if (injector) {
+    if (injector && metadata.framework === Framework.Angular) {
       metadata.dependencies = getDependenciesForDirective(
         injector,
         resolutionPathWithProviders,
@@ -223,12 +235,38 @@ const getDirectiveMetadata = (dir: any): DirectiveMetadata => {
   const getMetadata = ngDebugClient().getDirectiveMetadata!;
   const metadata = getMetadata?.(dir) as ComponentDebugMetadata;
   if (metadata) {
-    return {
-      inputs: metadata.inputs,
-      outputs: metadata.outputs,
-      encapsulation: metadata.encapsulation,
-      onPush: metadata.changeDetection === ChangeDetectionStrategy.OnPush,
-    };
+    const {framework} = metadata;
+    switch (framework) {
+      case undefined: // Back compat, older Angular versions did not set `framework`.
+      case Framework.Angular: {
+        return {
+          framework: Framework.Angular,
+          inputs: metadata.inputs,
+          outputs: metadata.outputs,
+          encapsulation: metadata.encapsulation,
+          onPush: metadata.changeDetection === ChangeDetectionStrategy.OnPush,
+        };
+      }
+      case Framework.Acx: {
+        return {
+          framework: Framework.Acx,
+          inputs: metadata.inputs,
+          outputs: metadata.outputs,
+          encapsulation: metadata.encapsulation,
+          onPush: metadata.changeDetection === AcxChangeDetectionStrategy.OnPush,
+        };
+      }
+      case Framework.Wiz: {
+        return {
+          framework: Framework.Wiz,
+          props: metadata.props,
+          events: metadata.events,
+        };
+      }
+      default: {
+        throw new Error(`Unknown framework: "${framework}".`);
+      }
+    }
   }
 
   // Used in older Angular versions, prior to the introduction of `getDirectiveMetadata`.
@@ -242,6 +280,7 @@ const getDirectiveMetadata = (dir: any): DirectiveMetadata => {
   };
 
   return {
+    framework: Framework.Angular,
     inputs: safelyGrabMetadata(DirectiveMetadataKey.INPUTS),
     outputs: safelyGrabMetadata(DirectiveMetadataKey.OUTPUTS),
     encapsulation: safelyGrabMetadata(DirectiveMetadataKey.ENCAPSULATION),
@@ -251,7 +290,16 @@ const getDirectiveMetadata = (dir: any): DirectiveMetadata => {
 
 export function isOnPushDirective(dir: any): boolean {
   const metadata = getDirectiveMetadata(dir.instance);
-  return metadata.onPush;
+  switch (metadata.framework) {
+    case Framework.Angular:
+      return metadata.onPush;
+    case Framework.Acx:
+      return metadata.onPush;
+    case Framework.Wiz:
+      return false;
+    default:
+      throw new Error(`Unknown framework: "${metadata.framework}".`);
+  }
 }
 
 export function getInjectorProviders(injector: Injector) {

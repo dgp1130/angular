@@ -10,6 +10,7 @@ import {ChangeDetectionStrategy, Component, computed, inject, input} from '@angu
 import {ComponentType} from 'protocol';
 
 import {ElementPropertyResolver} from '../property-resolver/element-property-resolver';
+import {ɵFramework} from '@angular/core';
 
 @Component({
   selector: 'ng-component-metadata',
@@ -22,7 +23,8 @@ export class ComponentMetadataComponent {
 
   private _nestedProps = inject(ElementPropertyResolver);
 
-  viewEncapsulationModes = ['Emulated', 'Native', 'None', 'ShadowDom'];
+  angularViewEncapsulationModes = ['Emulated', 'Native', 'None', 'ShadowDom'];
+  acxViewEncapsulationModes = ['Emulated', 'None'];
 
   readonly controller = computed(() => {
     const comp = this.currentSelectedComponent();
@@ -33,15 +35,27 @@ export class ComponentMetadataComponent {
   });
 
   readonly viewEncapsulation = computed(() => {
-    const encapsulationIndex = this.controller()?.directiveViewEncapsulation;
-    if (encapsulationIndex !== undefined) {
-      return this.viewEncapsulationModes[encapsulationIndex];
+    const metadata = this.controller()?.directiveMetadata;
+    if (!metadata) return undefined;
+
+    switch (metadata.framework) {
+      case ɵFramework.Angular:
+        return this.angularViewEncapsulationModes[metadata.encapsulation];
+      case ɵFramework.Acx:
+        return this.acxViewEncapsulationModes[metadata.encapsulation];
+      default:
+        return undefined;
     }
-    return undefined;
   });
 
   readonly changeDetectionStrategy = computed(() => {
-    const onPush = this.controller()?.directiveHasOnPushStrategy;
-    return onPush ? 'OnPush' : onPush !== undefined ? 'Default' : undefined;
+    const metadata = this.controller()?.directiveMetadata;
+    if (!metadata) return undefined;
+
+    if ('onPush' in metadata) {
+      return metadata.onPush ? 'OnPush' : 'Default';
+    } else {
+      return undefined;
+    }
   });
 }

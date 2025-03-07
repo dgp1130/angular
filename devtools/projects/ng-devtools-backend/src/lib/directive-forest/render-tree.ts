@@ -47,10 +47,13 @@ const extractViewTree = (
   }
   const component = getComponent?.(domNode);
   if (component) {
+    // TODO: Should we call this at a higher-level abstraction and pass the directive metadata down to here?
+    const name =
+      ngDebugClient().getDirectiveMetadata?.(component)?.name ?? domNode.nodeName.toLowerCase();
     componentTreeNode.component = {
       instance: component,
       isElement: isCustomElement(domNode),
-      name: domNode.nodeName.toLowerCase(),
+      name,
     };
   }
   if (component || componentTreeNode.directives.length) {
