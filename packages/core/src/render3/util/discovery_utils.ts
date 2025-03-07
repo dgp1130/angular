@@ -224,6 +224,17 @@ export function getDirectives(node: Node): {}[] {
   return context.directives === null ? [] : [...context.directives];
 }
 
+export enum Framework {
+  Angular = 'angular',
+  Acx = 'acx',
+  Wiz = 'wiz',
+}
+
+export interface BaseDirectiveDebugMetadata {
+  name?: string;
+  framework?: Framework;
+}
+
 /**
  * Partial metadata for a given directive instance.
  * This information might be useful for debugging purposes or tooling.
@@ -231,7 +242,8 @@ export function getDirectives(node: Node): {}[] {
  *
  * @publicApi
  */
-export interface DirectiveDebugMetadata {
+export interface AngularDirectiveDebugMetadata extends BaseDirectiveDebugMetadata {
+  framework?: Framework.Angular; // Optional for backwards compatibility.
   inputs: Record<string, string>;
   outputs: Record<string, string>;
 }
@@ -247,10 +259,46 @@ export interface DirectiveDebugMetadata {
  *
  * @publicApi
  */
-export interface ComponentDebugMetadata extends DirectiveDebugMetadata {
+export interface AngularComponentDebugMetadata extends AngularDirectiveDebugMetadata {
   encapsulation: ViewEncapsulation;
   changeDetection: ChangeDetectionStrategy;
 }
+
+export enum AcxChangeDetectionStrategy {
+  // TODO: Is this the correct translation?
+  Default = 0,
+  OnPush = 1,
+}
+
+export enum AcxViewEncapsulation {
+  // TODO: Is this the correct translation?
+  Emulated = 0,
+  None = 1,
+}
+
+export interface AcxDirectiveDebugMetadata extends BaseDirectiveDebugMetadata {
+  framework: Framework.Acx;
+  changeDetection: AcxChangeDetectionStrategy;
+  encapsulation: AcxViewEncapsulation;
+}
+
+export interface AcxComponentDebugMetadata extends AcxDirectiveDebugMetadata {
+  inputs: Record<string, string>;
+  outputs: Record<string, string>;
+}
+
+export interface WizComponentDebugMetadata extends BaseDirectiveDebugMetadata {
+  framework: Framework.Wiz;
+  props: Record<string, string>;
+  events: Record<string, string>;
+}
+
+export type DirectiveDebugMetadata = AngularDirectiveDebugMetadata | AcxDirectiveDebugMetadata;
+
+export type ComponentDebugMetadata =
+  | AngularComponentDebugMetadata
+  | AcxComponentDebugMetadata
+  | WizComponentDebugMetadata;
 
 /**
  * Returns the debug (partial) metadata for a particular directive or component instance.
@@ -478,7 +526,7 @@ function assertDomElement(value: any) {
  * mappings for backwards compatibility.
  */
 function extractInputDebugMetadata<T>(inputs: DirectiveDef<T>['inputs']) {
-  const res: DirectiveDebugMetadata['inputs'] = {};
+  const res: AngularDirectiveDebugMetadata['inputs'] = {};
 
   for (const key in inputs) {
     if (inputs.hasOwnProperty(key)) {
