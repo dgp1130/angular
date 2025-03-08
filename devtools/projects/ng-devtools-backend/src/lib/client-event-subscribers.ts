@@ -198,16 +198,9 @@ const getNestedPropertiesCallback =
     if (!current) {
       return emitEmpty();
     }
-    let data = current.instance;
-    for (const prop of propPath) {
-      data = unwrapSignal(data[prop]);
-      if (!data) {
-        console.error('Cannot access the properties', propPath, 'of', node);
-      }
-    }
     messageBus.emit('nestedProperties', [
       position,
-      {props: serializeDirectiveState(data)},
+      {props: serializeDirectiveState(current, propPath)},
       propPath,
     ]);
     return;
