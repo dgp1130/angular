@@ -81,6 +81,8 @@ type NestedSerializerFn = (
   isReadonly: boolean,
   currentLevel: number,
   level?: number,
+  isImmutableContext?: boolean,
+  isEditable?: boolean,
 ) => Descriptor;
 
 const ignoreList: Set<Key> = new Set([METADATA_PROPERTY_NAME, '__ngSimpleChanges__']);
@@ -187,6 +189,8 @@ export function createShallowSerializedDescriptor(
   propName: string | number,
   propData: TerminalType,
   isReadonly: boolean,
+  isImmutableContext: boolean,
+  isEditableInput: boolean,
 ): Descriptor {
   const {type, containerType} = propData;
 
@@ -196,7 +200,8 @@ export function createShallowSerializedDescriptor(
   const shallowSerializedDescriptor: Descriptor = {
     type,
     expandable: shallowPropTypeToTreeMetaData[type].expandable,
-    editable: isEditable(descriptor, propName, propData, getterOrSetter) && !isReadonly,
+    editable:
+      isEditableInput && isEditable(descriptor, propName, propData, getterOrSetter) && !isReadonly,
     preview: getPreview(propData, getterOrSetter),
     containerType,
   };
@@ -220,6 +225,8 @@ export function createLevelSerializedDescriptor(
     level?: number,
     max?: number,
   ) => Descriptor,
+  isImmutableContext: boolean,
+  isEditable: boolean,
 ): Descriptor {
   const {type, prop, containerType} = propData;
 
@@ -235,7 +242,13 @@ export function createLevelSerializedDescriptor(
   };
 
   if (levelOptions.level !== undefined && levelOptions.currentLevel < levelOptions.level) {
-    const value = getLevelDescriptorValue(propData, levelOptions, continuation);
+    const value = getLevelDescriptorValue(
+      propData,
+      levelOptions,
+      continuation,
+      isImmutableContext,
+      isEditable,
+    );
     if (value !== undefined) {
       levelSerializedDescriptor.value = value;
     }
@@ -251,6 +264,8 @@ export function createNestedSerializedDescriptor(
   levelOptions: LevelOptions,
   nodes: NestedProp[],
   nestedSerializer: NestedSerializerFn,
+  isImmutableContext: boolean,
+  isEditable: boolean,
 ): Descriptor {
   const {type, prop, containerType} = propData;
 
@@ -266,7 +281,14 @@ export function createNestedSerializedDescriptor(
   };
 
   if (nodes?.length) {
-    const value = getNestedDescriptorValue(propData, levelOptions, nodes, nestedSerializer);
+    const value = getNestedDescriptorValue(
+      propData,
+      levelOptions,
+      nodes,
+      nestedSerializer,
+      isImmutableContext,
+      isEditable,
+    );
     if (value !== undefined) {
       nestedSerializedDescriptor.value = value;
     }
@@ -279,6 +301,8 @@ function getNestedDescriptorValue(
   levelOptions: LevelOptions,
   nodes: NestedProp[],
   nestedSerializer: NestedSerializerFn,
+  isImmutableContext: boolean,
+  isEditable: boolean,
 ) {
   const {type, prop} = propData;
   const {currentLevel} = levelOptions;
@@ -287,7 +311,16 @@ function getNestedDescriptorValue(
   switch (type) {
     case PropType.Array:
       return nodes.map((nestedProp) =>
-        nestedSerializer(value, nestedProp.name, nestedProp.children, false, currentLevel + 1),
+        nestedSerializer(
+          value,
+          nestedProp.name,
+          nestedProp.children,
+          false,
+          /* currentLevel */ currentLevel + 1,
+          /* level */ undefined,
+          isImmutableContext,
+          isEditable,
+        ),
       );
     case PropType.Object:
       return nodes.reduce(
@@ -298,7 +331,10 @@ function getNestedDescriptorValue(
               nestedProp.name,
               nestedProp.children,
               false,
-              currentLevel + 1,
+              /* currentLevel */ currentLevel + 1,
+              /* level */ undefined,
+              isImmutableContext,
+              isEditable,
             );
           }
           return accumulator;
@@ -317,7 +353,11 @@ function getLevelDescriptorValue(
     isReadonly: boolean,
     level?: number,
     max?: number,
+    isImmutableContext?: boolean,
+    isEditable?: boolean,
   ) => Descriptor,
+  isImmutableContext: boolean,
+  isEditable: boolean,
 ) {
   const {type, prop} = propData;
   const {currentLevel, level} = levelOptions;
@@ -326,7 +366,15 @@ function getLevelDescriptorValue(
   switch (type) {
     case PropType.Array:
       return value.map((_: any, idx: number) =>
-        continuation(value, idx, isReadonly, currentLevel + 1, level),
+        continuation(
+          value,
+          idx,
+          isReadonly,
+          currentLevel + 1,
+          level,
+          isImmutableContext,
+          isEditable,
+        ),
       );
     case PropType.Object:
       return getKeys(value).reduce(
@@ -338,6 +386,8 @@ function getLevelDescriptorValue(
               isReadonly,
               currentLevel + 1,
               level,
+              isImmutableContext,
+              isEditable,
             );
           }
           return accumulator;

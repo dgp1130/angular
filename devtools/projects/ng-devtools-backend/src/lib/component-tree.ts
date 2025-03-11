@@ -130,7 +130,7 @@ export const getLatestComponentState = (
 
     if (query.propertyQuery.type === PropertyQueryTypes.All) {
       directiveProperties[dir.name] = {
-        props: serializeDirectiveState(instance),
+        props: serializeDirectiveState(dir),
         metadata,
       };
     }
