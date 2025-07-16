@@ -122,7 +122,8 @@ const devToolsProfiler: Profiler = (
     case ProfilerEvent.LifecycleHookStart:
     case ProfilerEvent.TemplateUpdateStart:
     case ProfilerEvent.HostBindingsUpdateStart:
-    case ProfilerEvent.OutputStart: {
+    case ProfilerEvent.OutputStart:
+    case ProfilerEvent.NewEventStart: {
       measureStart(event);
       break;
     }
@@ -201,6 +202,10 @@ const devToolsProfiler: Profiler = (
     }
     case ProfilerEvent.OutputEnd: {
       measureEnd(ProfilerEvent.OutputStart, stringifyForError(eventFn), 'tertiary-light');
+      break;
+    }
+    case ProfilerEvent.NewEventEnd: {
+      measureEnd(ProfilerEvent.NewEventStart, 'new-event', 'primary-dark');
       break;
     }
     default: {

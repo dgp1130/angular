@@ -579,6 +579,16 @@ export class ApplicationRef {
 
       profiler(ProfilerEvent.BootstrapComponentEnd, compRef);
 
+      setInterval(async () => {
+        profiler(ProfilerEvent.NewEventStart, compRef);
+        await new Promise<void>((resolve) => {
+          setTimeout(() => {
+            resolve();
+          }, 10);
+        });
+        profiler(ProfilerEvent.NewEventEnd, compRef);
+      }, 1_000);
+
       return compRef;
     });
   }
