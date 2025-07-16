@@ -77,6 +77,7 @@ const getHooks = (onFrame: (frame: ProfilerFrame) => void): Partial<Hooks> => {
         isComponent,
         lifecycle: {},
         outputs: {},
+        newEvents: [],
       });
     },
     onChangeDetectionStart(component: any, node: Node): void {
@@ -99,6 +100,7 @@ const getHooks = (onFrame: (frame: ProfilerFrame) => void): Partial<Hooks> => {
           changeDetection: 0,
           lifecycle: {},
           outputs: {},
+          newEvents: [],
         });
       }
     },
@@ -136,6 +138,7 @@ const getHooks = (onFrame: (frame: ProfilerFrame) => void): Partial<Hooks> => {
           isComponent,
           lifecycle: {},
           outputs: {},
+          newEvents: [],
         });
       }
     },
@@ -154,6 +157,7 @@ const getHooks = (onFrame: (frame: ProfilerFrame) => void): Partial<Hooks> => {
           isComponent,
           lifecycle: {},
           outputs: {},
+          newEvents: [],
         });
       }
     },
@@ -191,6 +195,7 @@ const getHooks = (onFrame: (frame: ProfilerFrame) => void): Partial<Hooks> => {
           isComponent,
           lifecycle: {},
           outputs: {},
+          newEvents: [],
         });
       }
     },
@@ -211,6 +216,37 @@ const getHooks = (onFrame: (frame: ProfilerFrame) => void): Partial<Hooks> => {
       }
       const duration = performance.now() - startTimestamp;
       entry.outputs[name] = (entry.outputs[name] || 0) + duration;
+      frameDuration += duration;
+    },
+    onNewEventStart(componentOrDirective: any, node: Node, isComponent: boolean): void {
+      startEvent(timeStartMap, componentOrDirective, 'new-event');
+      if (!eventMap.has(componentOrDirective)) {
+        eventMap.set(componentOrDirective, {
+          isElement: isCustomElement(node),
+          name: getDirectiveName(componentOrDirective),
+          isComponent,
+          lifecycle: {},
+          outputs: {},
+          newEvents: [],
+        });
+      }
+    },
+    onNewEventEnd(componentOrDirective: any): void {
+      const entry = eventMap.get(componentOrDirective);
+      const startTimestamp = getEventStart(timeStartMap, componentOrDirective, 'new-event');
+      if (startTimestamp === undefined) {
+        return;
+      }
+      if (!entry) {
+        console.warn(
+          'Could not find directive or component in onNewEventEnd callback',
+          componentOrDirective,
+        );
+        return;
+      }
+      const endTimestamp = performance.now();
+      const duration = endTimestamp - startTimestamp;
+      entry.newEvents.push({start: startTimestamp, end: endTimestamp});
       frameDuration += duration;
     },
   };
@@ -305,6 +341,7 @@ const prepareInitialFrame = (source: string, duration: number) => {
         name: getDirectiveName(d.instance),
         outputs: {},
         lifecycle: {},
+        newEvents: [],
       };
     });
     if (node.component) {
@@ -314,6 +351,7 @@ const prepareInitialFrame = (source: string, duration: number) => {
         lifecycle: {},
         outputs: {},
         name: getDirectiveName(node.component.instance),
+        newEvents: [],
       });
     }
     const result: ElementProfile = {

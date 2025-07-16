@@ -69,6 +69,8 @@ type OutputEndHook = (
   node: Node,
   isComponent: boolean,
 ) => void;
+type NewEventStartHook = (componentOrDirective: any, node: Node, isComponent: boolean) => void;
+type NewEventEndHook = (componentOrDirective: any) => void;
 
 export interface Hooks {
   onCreate: CreationHook;
@@ -79,6 +81,8 @@ export interface Hooks {
   onLifecycleHookEnd: LifecycleEndHook;
   onOutputStart: OutputStartHook;
   onOutputEnd: OutputEndHook;
+  onNewEventStart: NewEventStartHook;
+  onNewEventEnd: NewEventEndHook;
 }
 
 /**
@@ -217,6 +221,14 @@ export abstract class Profiler {
       return;
     }
     this._invokeCallback('onOutputEnd', arguments);
+  }
+
+  protected onNewEventStart(_componentOrDirective: any, node: Node, isComponent: boolean): void {
+    this._invokeCallback('onNewEventStart', arguments);
+  }
+
+  protected onNewEventEnd(_componentOrDirective: any): void {
+    this._invokeCallback('onNewEventEnd', arguments);
   }
 
   /** @internal */

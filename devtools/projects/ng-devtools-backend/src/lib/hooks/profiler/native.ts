@@ -250,4 +250,14 @@ export class NgProfiler extends Profiler {
     const id = this._tracker.getDirectiveId(componentOrDirective);
     this._onOutputEnd(componentOrDirective, listener.name, node, id, isComponent);
   }
+
+  [ɵProfilerEvent.NewEventStart](componentOrDirective: any): void {
+    const node = getDirectiveHostElement(componentOrDirective);
+    const isComponent = !!this._tracker.isComponent.get(componentOrDirective);
+    this.onNewEventStart(componentOrDirective, node, isComponent);
+  }
+
+  [ɵProfilerEvent.NewEventEnd](componentOrDirective: any): void {
+    this.onNewEventEnd(componentOrDirective);
+  }
 }

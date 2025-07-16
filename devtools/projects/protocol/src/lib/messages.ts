@@ -278,6 +278,7 @@ export interface DirectiveProfile {
   lifecycle: LifecycleProfile;
   outputs: OutputProfile;
   changeDetection?: number;
+  newEvents: Array<{start: number; end: number}>;
 }
 
 export interface ElementProfile {

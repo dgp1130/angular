@@ -53,6 +53,13 @@ export const formatDirectiveProfile = (nodes: DirectiveProfile[]) => {
         value: +outputProfile.toFixed(2),
       });
     });
+    graphData.push(
+      ...node.newEvents.map(({start, end}) => ({
+        directive: node.name,
+        method: 'new event',
+        value: end - start,
+      })),
+    );
   });
   return graphData;
 };
