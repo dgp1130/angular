@@ -72,6 +72,8 @@ export {
   AcxComponentDebugMetadata as ɵAcxComponentDebugMetadata,
   WizComponentDebugMetadata as ɵWizComponentDebugMetadata,
   DirectiveDebugMetadata as ɵDirectiveDebugMetadata,
+  type SharedStylesHost as ɵSharedStylesHost,
+  SHARED_STYLES_HOST as ɵSHARED_STYLES_HOST,
   ɵɵadvance,
   ɵɵariaProperty,
   ɵɵattribute,
