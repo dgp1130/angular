@@ -15,6 +15,7 @@ import {
   OnDestroy,
   Optional,
   PLATFORM_ID,
+  ɵSharedStylesHost,
 } from '@angular/core';
 
 /** The style elements attribute name used to set value of `APP_ID` token. */
@@ -102,7 +103,7 @@ export function createLinkElement(url: string, doc: Document): HTMLLinkElement {
 }
 
 @Injectable()
-export class SharedStylesHost implements OnDestroy {
+export class SharedStylesHost implements ɵSharedStylesHost, OnDestroy {
   /**
    * Provides usage information for active inline style content and associated HTML <style> elements.
    * Embedded styles typically originate from the `styles` metadata of a rendered component.

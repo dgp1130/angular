@@ -208,6 +208,8 @@ export {ɵɵreplaceMetadata, ɵɵgetReplaceMetadataURL} from './hmr';
 
 export {store} from './util/view_utils';
 
+export {SHARED_STYLES_HOST, type SharedStylesHost} from './shared_styles_host';
+
 export {
   ComponentDef,
   ComponentTemplate,
