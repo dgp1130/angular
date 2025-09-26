@@ -1,7 +1,11 @@
-import {platformBrowser} from '@angular/platform-browser';
+import {createApplication} from '@angular/platform-browser';
 
-import {AppModule} from './app/app.module';
+import {AppComponent} from './app/app.component';
 
-platformBrowser()
-  .bootstrapModule(AppModule)
-  .catch((err) => console.error(err));
+const root = document.querySelector('#root')!;
+const appRoot = root.shadowRoot.firstElementChild!;
+
+(async () => {
+  const appRef = await createApplication();
+  appRef.bootstrap(AppComponent, appRoot);
+})();

@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build --configuration production",
     "pretest": "ng version",
-    "test": "echo 'No tests specified'",
+    "test": "ng serve",
     "lint": "ng lint",
     "e2e": "echo 'No e2e tests specified'"
   },
