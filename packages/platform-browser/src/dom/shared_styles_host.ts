@@ -15,6 +15,7 @@ import {
   OnDestroy,
   Optional,
   PLATFORM_ID,
+  ViewRef,
   ɵSharedStylesHost,
 } from '@angular/core';
 
@@ -120,6 +121,8 @@ export class SharedStylesHost implements ɵSharedStylesHost, OnDestroy {
    * Set of host DOM nodes that will have styles attached.
    */
   private readonly hosts = new Set<Node>();
+
+  private readonly rootViewToStyleRoot = new Map<ViewRef, ShadowRoot | HTMLHeadElement>();
 
   constructor(
     @Inject(DOCUMENT) private readonly doc: Document,
@@ -242,5 +245,13 @@ export class SharedStylesHost implements ɵSharedStylesHost, OnDestroy {
 
     // Insert the element into the DOM with the host node as parent
     return host.appendChild(element);
+  }
+
+  addRootView(viewRef: ViewRef, styleRoot: ShadowRoot | HTMLHeadElement): void {
+    this.rootViewToStyleRoot.set(viewRef, styleRoot);
+  }
+
+  removeRootView(viewRef: ViewRef): void {
+    this.rootViewToStyleRoot.delete(viewRef);
   }
 }

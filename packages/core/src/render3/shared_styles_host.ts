@@ -7,6 +7,7 @@
  */
 
 import {InjectionToken} from '../di/injection_token';
+import {ViewRef} from '../linker/view_ref';
 
 /**
  * @publicApi
@@ -22,4 +23,6 @@ export interface SharedStylesHost {
   removeStyles(styles: string[], urls?: string[]): void;
   addHost(hostNode: Node): void;
   removeHost(hostNode: Node): void;
+  addRootView(viewRef: ViewRef, styleRoot: ShadowRoot | HTMLHeadElement): void;
+  removeRootView(viewRef: ViewRef): void;
 }

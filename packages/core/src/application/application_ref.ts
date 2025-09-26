@@ -51,6 +51,8 @@ import {EffectScheduler} from '../render3/reactivity/root_effect_scheduler';
 import {isReactiveLViewConsumer} from '../render3/reactive_lview_consumer';
 import {ApplicationInitStatus} from './application_init';
 import {TracingAction, TracingService, TracingSnapshot} from './tracing';
+import {throwInvalidWriteToSignalError} from '@angular/core/primitives/signals/src/errors';
+import {SHARED_STYLES_HOST} from '../render3';
 
 /**
  * A DI token that provides a set of callbacks to
@@ -756,6 +758,13 @@ export class ApplicationRef {
     const view = viewRef as InternalViewRef<unknown>;
     this._views.push(view);
     view.attachToAppRef(this);
+
+    const rootNode: Node = getRootNode(viewRef);
+    const owner = rootNode.getRootNode();
+    // TODO: Inject document?
+    const styleRoot = owner === document ? document.head : (owner as ShadowRoot);
+    const sharedStylesHost = this.injector.get(SHARED_STYLES_HOST);
+    sharedStylesHost.addRootView(viewRef, styleRoot);
   }
 
   /**
@@ -764,6 +773,10 @@ export class ApplicationRef {
   detachView(viewRef: ViewRef): void {
     (typeof ngDevMode === 'undefined' || ngDevMode) && warnIfDestroyed(this._destroyed);
     const view = viewRef as InternalViewRef<unknown>;
+
+    const sharedStylesHost = this.injector.get(SHARED_STYLES_HOST);
+    sharedStylesHost.removeRootView(viewRef);
+
     remove(this._views, view);
     view.detachFromAppRef();
   }

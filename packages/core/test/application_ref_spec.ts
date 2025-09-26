@@ -34,6 +34,7 @@ import {
   Type,
   ViewChild,
   ViewContainerRef,
+  ViewEncapsulation,
   provideZoneChangeDetection,
 } from '../src/core';
 import {ErrorHandler} from '../src/error_handler';
@@ -67,7 +68,7 @@ describe('bootstrap', () => {
     mockConsole = new MockConsole();
   });
 
-  function createRootEl(selector = 'bootstrap-app') {
+  function createRootEl(selector = 'bootstrap-app', parent?: Element | ShadowRoot) {
     const doc = TestBed.inject(DOCUMENT);
     const rootEl = <HTMLElement>(
       getContent(createTemplate(`<${selector}></${selector}>`)).firstChild
@@ -76,7 +77,8 @@ describe('bootstrap', () => {
     for (let i = 0; i < oldRoots.length; i++) {
       getDOM().remove(oldRoots[i]);
     }
-    doc.body.appendChild(rootEl);
+
+    (parent ?? doc.body).appendChild(rootEl);
   }
 
   type CreateModuleOptions = {
@@ -168,6 +170,46 @@ describe('bootstrap', () => {
 
       // The component should see the child module providers
       expect(component.injector.get(helloToken)).toEqual('component');
+    }),
+  ));
+
+  it('should bootstrap a component into an existing shadow root', waitForAsync(
+    inject([ApplicationRef, Compiler], (app: ApplicationRef, compiler: Compiler) => {
+      @Component({
+        selector: 'bootstrap-app',
+        template: '<div class="hello">Hello</div>',
+        styles: ['.hello { color: red; }'],
+        standalone: false,
+        encapsulation: ViewEncapsulation.None,
+      })
+      class SomeComponent {}
+
+      @NgModule({
+        declarations: [SomeComponent],
+      })
+      class SomeModule {}
+
+      const hostEl = document.createElement('div');
+      const shadowRoot = hostEl.attachShadow({mode: 'open'});
+      createRootEl('bootstrap-app', shadowRoot);
+      document.body.appendChild(hostEl);
+
+      const modFactory = compiler.compileModuleSync(SomeModule);
+      const module = modFactory.create(TestBed.inject(Injector));
+      const cmpFactory = module.componentFactoryResolver.resolveComponentFactory(SomeComponent);
+      app.bootstrap(cmpFactory);
+
+      const innerEl = shadowRoot.querySelector('.hello')!;
+      expect(getComputedStyle(innerEl).color).toBe('rgb(255, 0, 0)');
+
+      const outerEl = document.createElement('div');
+      outerEl.classList.add('hello');
+      document.body.appendChild(outerEl);
+      expect(getComputedStyle(outerEl).color).toBe('rgb(0, 0, 0)');
+
+      app.destroy();
+      hostEl.remove();
+      outerEl.remove();
     }),
   ));
 

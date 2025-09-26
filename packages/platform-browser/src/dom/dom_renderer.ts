@@ -178,6 +178,8 @@ export class DomRendererFactory2 implements RendererFactory2, OnDestroy {
     }
 
     const renderer = this.getOrCreateRenderer(element, type);
+    // TODO: Is it problematic to add styles when creating the renderer? We need
+    // a `ViewRef` to map these styles to a specific root.
     // Renderers have different logic due to different encapsulation behaviours.
     // Ex: for emulated, an attribute is added to the element.
     if (renderer instanceof EmulatedEncapsulationDomRenderer2) {
