@@ -1560,6 +1560,7 @@ export function reflectComponentType<C>(component: Type<C>): ComponentMirror<C> 
 export abstract class Renderer2 {
     abstract addClass(el: any, name: string): void;
     abstract appendChild(parent: any, newChild: any): void;
+    abstract applyStyles?(): void;
     abstract createComment(value: string): any;
     abstract createElement(name: string, namespace?: string | null): any;
     abstract createText(value: string): any;
