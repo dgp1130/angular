@@ -77,6 +77,9 @@ export interface Renderer {
     callback: (event: any) => boolean | void,
     options?: ListenerOptions,
   ): () => void;
+
+  /** Attach any required stylesheets to the DOM. */
+  applyStyles?(): void;
 }
 
 export interface RendererFactory {

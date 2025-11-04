@@ -241,6 +241,9 @@ export abstract class Renderer2 {
     options?: ListenerOptions,
   ): () => void;
 
+  /** Attach any required stylesheets to the DOM. */
+  abstract applyStyles?(): void;
+
   /**
    * @internal
    * @nocollapse
