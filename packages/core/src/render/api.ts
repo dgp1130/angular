@@ -241,6 +241,9 @@ export abstract class Renderer2 {
     options?: ListenerOptions,
   ): () => void;
 
+  /** TODO */
+  abstract applyStyles?(): void;
+
   /**
    * @internal
    * @nocollapse
