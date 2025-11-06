@@ -13,6 +13,9 @@ import {getComponentLViewByIndex} from '../render3/util/view_utils';
 
 import {RendererStyleFlags2, RendererType2} from './api_flags';
 
+/** TODO */
+export type StyleRoot = Document | ShadowRoot;
+
 /**
  * Creates and initializes a custom renderer that implements the `Renderer2` base class.
  *
