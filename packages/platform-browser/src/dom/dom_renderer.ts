@@ -174,12 +174,7 @@ export class DomRendererFactory2 implements RendererFactory2, OnDestroy {
       type = {...type, encapsulation: ViewEncapsulation.Emulated};
     }
 
-    // TODO: Is it problematic to add styles when creating the renderer? We need
-    // a `ViewRef` to map these styles to a specific root.
-    const renderer = this.getOrCreateRenderer(element, type);
-    renderer.applyStyles?.();
-
-    return renderer;
+    return this.getOrCreateRenderer(element, type);
   }
 
   private getOrCreateRenderer(element: any, type: RendererType2): Renderer2 {
