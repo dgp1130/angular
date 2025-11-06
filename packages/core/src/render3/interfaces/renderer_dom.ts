@@ -52,6 +52,9 @@ export interface RNode {
    * Used exclusively for building up DOM which are static (ie not View roots)
    */
   appendChild(newChild: RNode): RNode;
+
+  /** TODO */
+  getRootNode(options?: GetRootNodeOptions): Node;
 }
 
 /**
