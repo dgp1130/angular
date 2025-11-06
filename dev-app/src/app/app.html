@@ -1,3 +1,22 @@
 <h1>Welcome to the dev app!</h1>
 
+Normal: <app-foo />
+<code>ngComponentOutlet</code>: <ng-container *ngComponentOutlet="foo" />
+<code>createComponent</code>: <ng-container #container />
+
+<div>
+    <button (click)="show.set(!show())">Toggle</button>
+    @if (show()) {
+        <code>&#64;if</code>: <app-bar />
+    }
+</div>
+
+<div>
+    <button (click)="addBar()">Add Bar</button>
+    <button (click)="removeBar()">Remove Bar</button>
+    @for (bar of bars(); track bar) {
+        <code>&#64;for</code>: <app-bar />
+    }
+</div>
+
 <router-outlet />
