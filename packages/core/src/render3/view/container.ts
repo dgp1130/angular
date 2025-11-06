@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
+import {assertStyleRoot, StyleRoot} from '../../render/api';
 import {addToArray, removeFromArray} from '../../util/array_utils';
 import {assertDefined, assertEqual} from '../../util/assert';
 import {assertLContainer, assertLView} from '../assert';
@@ -18,11 +19,13 @@ import {
 } from '../interfaces/container';
 import {TNode} from '../interfaces/node';
 import {RComment, RElement} from '../interfaces/renderer_dom';
-import {isLView} from '../interfaces/type_checks';
+import {isLContainer, isLView} from '../interfaces/type_checks';
 import {
+  CONTEXT,
   DECLARATION_COMPONENT_VIEW,
   DECLARATION_LCONTAINER,
   FLAGS,
+  HOST,
   HYDRATION,
   LView,
   LViewFlags,
@@ -41,6 +44,7 @@ import {
   getBeforeNodeForView,
   removeViewFromDOM,
 } from '../node_manipulation';
+import {getStyleRoot, walkDescendants} from '../util/view_traversal_utils';
 import {updateAncestorTraversalFlagsOnAttach} from '../util/view_utils';
 
 /**
@@ -113,6 +117,19 @@ export function addLViewToLContainer(
     const parentRNode = renderer.parentNode(lContainer[NATIVE] as RElement | RComment);
     if (parentRNode !== null) {
       addViewToDOM(tView, lContainer[T_HOST], renderer, lView, parentRNode, beforeNode);
+
+      for (const descendant of walkDescendants(lView)) {
+        if (!descendant || isLContainer(descendant)) continue;
+
+        // Element is already attached to the DOM, apply its styles immediately.
+        const componentRenderer = descendant[RENDERER];
+        if (componentRenderer?.applyStyles) {
+          ngDevMode && assertDefined(descendant[CONTEXT], 'component instance');
+          const componentInstance = descendant[CONTEXT]!;
+          const styleRoot = getStyleRoot(componentInstance);
+          componentRenderer.applyStyles(styleRoot);
+        }
+      }
     }
   }
 
@@ -161,6 +178,21 @@ export function detachView(lContainer: LContainer, removeIndex: number): LView |
     if (removeIndex > 0) {
       lContainer[indexInContainer - 1][NEXT] = viewToDetach[NEXT] as LView;
     }
+
+    for (const descendant of walkDescendants(viewToDetach)) {
+      if (!descendant || isLContainer(descendant)) continue;
+
+      const hostRNode = descendant[HOST];
+      const renderer = descendant[RENDERER];
+      if (hostRNode && renderer?.removeStyles) {
+        const componentInstance = descendant[CONTEXT]!;
+        if (componentInstance) {
+          const styleRoot = getStyleRoot(componentInstance);
+          renderer.removeStyles(styleRoot);
+        }
+      }
+    }
+
     const removedLView = removeFromArray(lContainer, CONTAINER_HEADER_OFFSET + removeIndex);
     removeViewFromDOM(viewToDetach[TVIEW], viewToDetach);
 

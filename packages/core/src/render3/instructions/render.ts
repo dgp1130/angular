@@ -7,7 +7,8 @@
  */
 
 import {retrieveHydrationInfo} from '../../hydration/utils';
-import {assertEqual, assertNotReactive} from '../../util/assert';
+import {assertStyleRoot, StyleRoot} from '../../render/api';
+import {assertDefined, assertEqual, assertNotReactive} from '../../util/assert';
 import {RenderFlags} from '../interfaces/definition';
 import {
   CONTEXT,
@@ -17,7 +18,9 @@ import {
   INJECTOR,
   LView,
   LViewFlags,
+  ON_DESTROY_HOOKS,
   QUERIES,
+  RENDERER,
   TVIEW,
   TView,
 } from '../interfaces/view';
@@ -28,6 +31,7 @@ import {enterView, leaveView} from '../state';
 import {getComponentLViewByIndex, isCreationMode} from '../util/view_utils';
 
 import {executeTemplate} from './shared';
+import { getStyleRoot } from '../util/view_traversal_utils';
 
 export function renderComponent(hostLView: LView, componentHostIdx: number) {
   ngDevMode && assertEqual(isCreationMode(hostLView), true, 'Should be run in creation mode');
@@ -45,6 +49,22 @@ export function renderComponent(hostLView: LView, componentHostIdx: number) {
 
   try {
     renderView(componentTView, componentView, componentView[CONTEXT]);
+    if (hostRNode?.isConnected) {
+      // Element is already attached to the DOM, apply its styles immediately.
+      ngDevMode && assertDefined(componentView[CONTEXT], 'component instance');
+      const componentInstance = componentView[CONTEXT]!;
+      const styleRoot = getStyleRoot(componentInstance);
+
+      const componentRenderer = componentView[RENDERER];
+      componentRenderer.applyStyles?.(styleRoot);
+      componentView[ON_DESTROY_HOOKS] ??= [];
+      componentView[ON_DESTROY_HOOKS].push(() => {
+        componentRenderer.removeStyles?.(styleRoot);
+      });
+    } else {
+      // Element is *not* attached to the DOM, can't know where its styles should go.
+      // Styles will be applied when attaching the view to a container.
+    }
   } finally {
     profiler(ProfilerEvent.ComponentEnd, componentView[CONTEXT] as any as {});
   }

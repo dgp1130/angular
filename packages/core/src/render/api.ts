@@ -255,7 +255,10 @@ export abstract class Renderer2 {
   ): () => void;
 
   /** Attach any required stylesheets to the DOM. */
-  abstract applyStyles?(): void;
+  abstract applyStyles?(styleRoot: StyleRoot): void;
+
+  /** Detach any stylesheets from the DOM. */
+  abstract removeStyles?(styleRoot: StyleRoot): void;
 
   /** The component's internal shadow root if one is used. */
   shadowRoot?: ShadowRoot;
