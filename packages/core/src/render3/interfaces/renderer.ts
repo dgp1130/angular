@@ -77,6 +77,8 @@ export interface Renderer {
     callback: (event: any) => boolean | void,
     options?: ListenerOptions,
   ): () => void;
+
+  applyStyles?(): void;
 }
 
 export interface RendererFactory {

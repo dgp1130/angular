@@ -18,6 +18,7 @@ import {
   LView,
   LViewFlags,
   QUERIES,
+  RENDERER,
   TVIEW,
   TView,
 } from '../interfaces/view';
@@ -45,6 +46,8 @@ export function renderComponent(hostLView: LView, componentHostIdx: number) {
 
   try {
     renderView(componentTView, componentView, componentView[CONTEXT]);
+    const renderer = componentView[RENDERER];
+    renderer.applyStyles?.();
   } finally {
     profiler(ProfilerEvent.ComponentEnd, componentView[CONTEXT] as any as {});
   }
