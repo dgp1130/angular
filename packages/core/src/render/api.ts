@@ -13,6 +13,19 @@ import {getComponentLViewByIndex} from '../render3/util/view_utils';
 
 import {RendererStyleFlags2, RendererType2} from './api_flags';
 
+/** A location where CSS stylesheets may be added. */
+export type StyleRoot = Document | ShadowRoot;
+
+/**
+ * Asserts that the given node is a {@link StyleRoot}. Useful for converting the return value of
+ * {@link Node.prototype.getRootNode} into a {@link StyleRoot}.
+ */
+export function assertStyleRoot(root: Node): asserts root is StyleRoot {
+  if (!(root instanceof Document || root instanceof ShadowRoot)) {
+    throw new Error('Expected a `Document` or `ShadowRoot`, is this node detached from the document?');
+  }
+}
+
 /**
  * Creates and initializes a custom renderer that implements the `Renderer2` base class.
  *

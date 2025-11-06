@@ -126,7 +126,10 @@ export {
 export {PendingTasksInternal as ɵPendingTasksInternal} from './pending_tasks_internal';
 export {ENABLE_ROOT_COMPONENT_BOOTSTRAP as ɵENABLE_ROOT_COMPONENT_BOOTSTRAP} from './platform/bootstrap';
 export {ReflectionCapabilities as ɵReflectionCapabilities} from './reflection/reflection_capabilities';
-export {AnimationRendererType as ɵAnimationRendererType} from './render/api';
+export {
+  AnimationRendererType as ɵAnimationRendererType,
+  assertStyleRoot as ɵassertStyleRoot,
+} from './render/api';
 export {
   InjectorProfilerContext as ɵInjectorProfilerContext,
   ProviderRecord as ɵProviderRecord,
