@@ -9,7 +9,6 @@
 import {DOCUMENT, ɵgetDOM as getDOM} from '@angular/common';
 import {
   APP_ID,
-  CSP_NONCE,
   Inject,
   Injectable,
   InjectionToken,
@@ -27,6 +26,7 @@ import {
   Optional,
   ɵallLeavingAnimations as allLeavingAnimations,
   ɵSHARED_STYLES_HOST as SHARED_STYLES_HOST,
+  ɵStyleRoot as StyleRoot,
 } from '@angular/core';
 
 import {RuntimeErrorCode} from '../errors';
@@ -144,7 +144,6 @@ export class DomRendererFactory2 implements RendererFactory2, OnDestroy {
     @Inject(REMOVE_STYLES_ON_COMPONENT_DESTROY) private removeStylesOnCompDestroy: boolean,
     @Inject(DOCUMENT) private readonly doc: Document,
     readonly ngZone: NgZone,
-    @Inject(CSP_NONCE) private readonly nonce: string | null = null,
     @Inject(TracingService)
     @Optional()
     private readonly tracingService: TracingService<TracingSnapshot> | null = null,
@@ -212,7 +211,6 @@ export class DomRendererFactory2 implements RendererFactory2, OnDestroy {
             type,
             doc,
             ngZone,
-            this.nonce,
             platformIsServer,
             tracingService,
             sharedStylesHost,
@@ -224,9 +222,9 @@ export class DomRendererFactory2 implements RendererFactory2, OnDestroy {
             type,
             doc,
             ngZone,
-            this.nonce,
             platformIsServer,
             tracingService,
+            sharedStylesHost,
           );
 
         default:
@@ -498,6 +496,8 @@ function isTemplateNode(node: any): node is HTMLTemplateElement {
 }
 
 class ShadowDomRenderer extends DefaultDomRenderer2 {
+  private static allShadowRoots = new Set<ShadowRoot>();
+
   private shadowRoot: any;
 
   constructor(
@@ -506,21 +506,16 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
     private readonly component: RendererType2,
     doc: Document,
     ngZone: NgZone,
-    private readonly nonce: string | null,
     platformIsServer: boolean,
     tracingService: TracingService<TracingSnapshot> | null,
-    private sharedStylesHost?: SharedStylesHost,
+    private sharedStylesHost: SharedStylesHost,
   ) {
     super(eventManager, doc, ngZone, platformIsServer, tracingService);
     this.shadowRoot = (hostEl as any).attachShadow({mode: 'open'});
+    ShadowDomRenderer.allShadowRoots.add(this.shadowRoot);
   }
 
-  applyStyles(): void {
-    // SharedStylesHost is used to add styles to the shadow root by ShadowDom.
-    // This is optional as it is not used by ExperimentalIsolatedShadowDom.
-    if (this.sharedStylesHost) {
-      this.sharedStylesHost.addHost(this.shadowRoot);
-    }
+  applyStyles(styleRoot: StyleRoot): void {
     let styles = this.component.styles;
     if (ngDevMode) {
       // We only do this in development, as for production users should not add CSS sourcemaps to components.
@@ -530,31 +525,52 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
 
     styles = shimStylesContent(this.component.id, styles);
 
-    for (const style of styles) {
-      const styleEl = document.createElement('style');
-
-      if (this.nonce) {
-        styleEl.setAttribute('nonce', this.nonce);
+    switch (this.component.encapsulation) {
+      case ViewEncapsulation.ShadowDom: {
+        // Legacy behavior for backwards compatibility, add styles to _all_ shadow roots in the application.
+        for (const styleRoot of ShadowDomRenderer.allShadowRoots) {
+          this.sharedStylesHost.addStyles(styleRoot, styles, this.component.getExternalStyles?.());
+        }
+        break;
       }
+      case ViewEncapsulation.ExperimentalIsolatedShadowDom: {
+        this.sharedStylesHost.addStyles(styleRoot, styles, this.component.getExternalStyles?.());
+        break;
+      }
+      default: {
+        throw new Error('Not shadow DOM'); // Assertion error.
+      }
+    }
+  }
 
-      styleEl.textContent = style;
-      this.shadowRoot.appendChild(styleEl);
+  removeStyles(styleRoot: StyleRoot): void {
+    let styles = this.component.styles;
+    if (ngDevMode) {
+      // We only do this in development, as for production users should not add CSS sourcemaps to components.
+      const baseHref = getDOM().getBaseHref(this.doc) ?? '';
+      styles = addBaseHrefToCssSourceMap(baseHref, styles);
     }
 
-    // Apply any external component styles to the shadow root for the component's element.
-    // The ShadowDOM renderer uses an alternative execution path for component styles that
-    // does not use the SharedStylesHost that other encapsulation modes leverage. Much like
-    // the manual addition of embedded styles directly above, any external stylesheets
-    // must be manually added here to ensure ShadowDOM components are correctly styled.
-    // TODO: Consider reworking the DOM Renderers to consolidate style handling.
-    const styleUrls = this.component.getExternalStyles?.();
-    if (styleUrls) {
-      for (const styleUrl of styleUrls) {
-        const linkEl = createLinkElement(styleUrl, this.doc);
-        if (this.nonce) {
-          linkEl.setAttribute('nonce', this.nonce);
+    styles = shimStylesContent(this.component.id, styles);
+
+    switch (this.component.encapsulation) {
+      case ViewEncapsulation.ShadowDom: {
+        // Legacy behavior for backwards compatibility, add styles to _all_ shadow roots in the application.
+        for (const styleRoot of ShadowDomRenderer.allShadowRoots) {
+          this.sharedStylesHost.removeStyles(
+            styleRoot,
+            styles,
+            this.component.getExternalStyles?.(),
+          );
         }
-        this.shadowRoot.appendChild(linkEl);
+        break;
+      }
+      case ViewEncapsulation.ExperimentalIsolatedShadowDom: {
+        this.sharedStylesHost.removeStyles(styleRoot, styles, this.component.getExternalStyles?.());
+        break;
+      }
+      default: {
+        throw new Error('Not shadow DOM'); // Assertion error.
       }
     }
   }
@@ -580,20 +596,21 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
   }
 
   override destroy() {
-    if (this.sharedStylesHost) {
-      this.sharedStylesHost.removeHost(this.shadowRoot);
-    }
+    ShadowDomRenderer.allShadowRoots.delete(this.shadowRoot);
   }
 }
 
 class NoneEncapsulationDomRenderer extends DefaultDomRenderer2 {
   private readonly styles: string[];
   private readonly styleUrls?: string[];
+  // TODO: Leak? Need to drop reference when any individual style is removed.
+  private readonly appliedStyleRoots = new Map<Document | ShadowRoot, number /* usage */>();
 
   constructor(
     eventManager: EventManager,
     private readonly sharedStylesHost: SharedStylesHost,
     component: RendererType2,
+    // TODO: Compat?
     private removeStylesOnCompDestroy: boolean,
     doc: Document,
     ngZone: NgZone,
@@ -613,16 +630,20 @@ class NoneEncapsulationDomRenderer extends DefaultDomRenderer2 {
     this.styleUrls = component.getExternalStyles?.(compId);
   }
 
-  applyStyles(): void {
-    this.sharedStylesHost.addStyles(this.styles, this.styleUrls);
+  applyStyles(styleRoot: StyleRoot): void {
+    this.sharedStylesHost.addStyles(styleRoot, this.styles, this.styleUrls);
+    const usage = this.appliedStyleRoots.get(styleRoot) ?? 0;
+    this.appliedStyleRoots.set(styleRoot, usage + 1);
   }
 
-  override destroy(): void {
-    if (!this.removeStylesOnCompDestroy) {
-      return;
-    }
-    if (allLeavingAnimations.size === 0) {
-      this.sharedStylesHost.removeStyles(this.styles, this.styleUrls);
+  removeStyles(styleRoot: StyleRoot): void {
+    this.sharedStylesHost.removeStyles(styleRoot, this.styles, this.styleUrls);
+    const usages = this.appliedStyleRoots.get(styleRoot)!;
+    // TODO: assert usages
+    if (usages === 1) {
+      this.appliedStyleRoots.delete(styleRoot);
+    } else {
+      this.appliedStyleRoots.set(styleRoot, usages - 1);
     }
   }
 }
@@ -659,8 +680,8 @@ class EmulatedEncapsulationDomRenderer2 extends NoneEncapsulationDomRenderer {
     this.hostAttr = shimHostAttribute(compId);
   }
 
-  override applyStyles(): void {
-    super.applyStyles();
+  override applyStyles(styleRoot: StyleRoot): void {
+    super.applyStyles(styleRoot);
     this.setAttribute(this.hostEl, this.hostAttr, '');
   }
 

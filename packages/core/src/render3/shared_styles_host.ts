@@ -7,6 +7,7 @@
  */
 
 import {InjectionToken} from '../di/injection_token';
+import {StyleRoot} from '../render/api';
 
 /**
  * @publicApi
@@ -18,8 +19,6 @@ export const SHARED_STYLES_HOST = new InjectionToken<SharedStylesHost>('SharedSt
  * @publicApi
  */
 export interface SharedStylesHost {
-  addStyles(styles: string[], urls?: string[]): void;
-  removeStyles(styles: string[], urls?: string[]): void;
-  addHost(hostNode: Node): void;
-  removeHost(hostNode: Node): void;
+  addStyles(styleRoot: StyleRoot, styles: string[], urls?: string[]): void;
+  removeStyles(styleRoot: StyleRoot, styles: string[], urls?: string[]): void;
 }

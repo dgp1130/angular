@@ -7,7 +7,7 @@
  */
 
 import {RendererStyleFlags2, RendererType2} from '../../render/api_flags';
-import type {ListenerOptions} from '../../render/api';
+import type {ListenerOptions, StyleRoot} from '../../render/api';
 import {TrustedHTML, TrustedScript, TrustedScriptURL} from '../../util/security/trusted_type_defs';
 
 import {RComment, RElement, RNode, RText} from './renderer_dom';
@@ -78,7 +78,10 @@ export interface Renderer {
     options?: ListenerOptions,
   ): () => void;
 
-  applyStyles?(): void;
+  /** TODO */
+  applyStyles?(styleRoot: StyleRoot): void;
+  /** TODO */
+  removeStyles?(styleRoot: StyleRoot): void;
 }
 
 export interface RendererFactory {

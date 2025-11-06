@@ -7,6 +7,7 @@
  */
 
 import {retrieveHydrationInfo} from '../../hydration/utils';
+import {StyleRoot} from '../../render/api';
 import {assertEqual, assertNotReactive} from '../../util/assert';
 import {RenderFlags} from '../interfaces/definition';
 import {
@@ -46,8 +47,13 @@ export function renderComponent(hostLView: LView, componentHostIdx: number) {
 
   try {
     renderView(componentTView, componentView, componentView[CONTEXT]);
-    const renderer = componentView[RENDERER];
-    renderer.applyStyles?.();
+    if (hostRNode) {
+      const componentRenderer = componentView[RENDERER];
+      const styleRoot = hostRNode.getRootNode() as StyleRoot;
+      componentRenderer.applyStyles?.(styleRoot);
+    } else {
+      // Styles will be applied when attaching the view to a container.
+    }
   } finally {
     profiler(ProfilerEvent.ComponentEnd, componentView[CONTEXT] as any as {});
   }
