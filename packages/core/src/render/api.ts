@@ -245,7 +245,7 @@ export abstract class Renderer2 {
   ): () => void;
 
   /** TODO */
-  abstract applyStyles?(): void;
+  abstract applyStyles?(styleRoot: StyleRoot): void;
 
   /**
    * @internal
