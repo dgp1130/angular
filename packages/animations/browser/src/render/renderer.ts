@@ -26,13 +26,18 @@ export class BaseAnimationRenderer implements Renderer2 {
   // We need to explicitly type this property because of an api-extractor bug
   // See https://github.com/microsoft/rushstack/issues/4390
   readonly ɵtype: AnimationRendererType.Regular = AnimationRendererType.Regular;
+  readonly applyStyles: Renderer2['applyStyles'];
 
   constructor(
     protected namespaceId: string,
     public delegate: Renderer2,
     public engine: AnimationEngine,
     private _onDestroy?: () => void,
-  ) {}
+  ) {
+    // TODO: Not being applied?
+    this.applyStyles = this.delegate.applyStyles?.bind(this.delegate);
+    console.log('updated');
+  }
 
   get data() {
     return this.delegate.data;
