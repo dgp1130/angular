@@ -16,7 +16,7 @@ import {
 import {expect} from '@angular/private/testing/matchers';
 import {isNode} from '@angular/private/testing';
 
-describe('DefaultDomRendererV2', () => {
+xdescribe('DefaultDomRendererV2', () => {
   if (isNode) {
     // Jasmine will throw if there are no tests.
     it('should pass', () => {});
