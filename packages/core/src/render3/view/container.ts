@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
+import { StyleRoot } from '../../render/api';
 import {addToArray, removeFromArray} from '../../util/array_utils';
 import {assertDefined, assertEqual} from '../../util/assert';
 import {assertLContainer, assertLView} from '../assert';
@@ -18,11 +19,13 @@ import {
 } from '../interfaces/container';
 import {TNode} from '../interfaces/node';
 import {RComment, RElement} from '../interfaces/renderer_dom';
-import {isLView} from '../interfaces/type_checks';
+import {isEmbeddedView, isLView, isRootView} from '../interfaces/type_checks';
 import {
   DECLARATION_COMPONENT_VIEW,
   DECLARATION_LCONTAINER,
   FLAGS,
+  HEADER_OFFSET,
+  HOST,
   HYDRATION,
   LView,
   LViewFlags,
@@ -106,6 +109,8 @@ export function addLViewToLContainer(
   // Insert into the view tree so the new view can be change-detected
   insertView(tView, lView, lContainer, index);
 
+  // TODO: Add styles
+
   // Insert elements that belong to this view into the DOM tree
   if (addToDOM) {
     const beforeNode = getBeforeNodeForView(index, lContainer);
@@ -114,6 +119,14 @@ export function addLViewToLContainer(
     if (parentRNode !== null) {
       addViewToDOM(tView, lContainer[T_HOST], renderer, lView, parentRNode, beforeNode);
     }
+
+    // Root view components have two LViews, one for the root view and another for the
+    // component. We want the component LView specifically.
+    const componentLView = (isRootView(lView) || isEmbeddedView(lView)) ? lView[HEADER_OFFSET] : lView;
+
+    const hostRNode = componentLView[HOST];
+    const componentRenderer = componentLView[RENDERER];
+    componentRenderer.applyStyles?.(hostRNode!.getRootNode() as StyleRoot);
   }
 
   // When in hydration mode, reset the pointer to the first child in
@@ -161,6 +174,11 @@ export function detachView(lContainer: LContainer, removeIndex: number): LView |
     if (removeIndex > 0) {
       lContainer[indexInContainer - 1][NEXT] = viewToDetach[NEXT] as LView;
     }
+
+    const componentLView = (isRootView(viewToDetach) || isEmbeddedView(viewToDetach)) ? viewToDetach[HEADER_OFFSET] : viewToDetach;
+    const renderer = componentLView[RENDERER];
+    renderer.removeStyles?.(componentLView[HOST]!.getRootNode() as StyleRoot);
+
     const removedLView = removeFromArray(lContainer, CONTAINER_HEADER_OFFSET + removeIndex);
     removeViewFromDOM(viewToDetach[TVIEW], viewToDetach);
 

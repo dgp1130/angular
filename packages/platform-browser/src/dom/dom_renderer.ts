@@ -543,6 +543,34 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
     }
   }
 
+  removeStyles(styleRoot: StyleRoot): void {
+    let styles = this.component.styles;
+    if (ngDevMode) {
+      // We only do this in development, as for production users should not add CSS sourcemaps to components.
+      const baseHref = getDOM().getBaseHref(this.doc) ?? '';
+      styles = addBaseHrefToCssSourceMap(baseHref, styles);
+    }
+
+    styles = shimStylesContent(this.component.id, styles);
+
+    switch (this.component.encapsulation) {
+      case ViewEncapsulation.ShadowDom: {
+        // Legacy behavior for backwards compatibility, add styles to _all_ shadow roots in the application.
+        for (const styleRoot of ShadowDomRenderer.allShadowRoots) {
+          this.sharedStylesHost.removeStyles(styleRoot, styles, this.component.getExternalStyles?.());
+        }
+        break;
+      }
+      case ViewEncapsulation.ExperimentalIsolatedShadowDom: {
+        this.sharedStylesHost.removeStyles(styleRoot, styles, this.component.getExternalStyles?.());
+        break;
+      }
+      default: {
+        throw new Error('Not shadow DOM'); // Assertion error.
+      }
+    }
+  }
+
   private nodeOrShadowRoot(node: any): any {
     return node === this.hostEl ? this.shadowRoot : node;
   }
@@ -572,12 +600,13 @@ class NoneEncapsulationDomRenderer extends DefaultDomRenderer2 {
   private readonly styles: string[];
   private readonly styleUrls?: string[];
   // TODO: Leak? Need to drop reference when any individual style is removed.
-  private readonly appliedStyleRoots = new Set<Document | ShadowRoot>();
+  private readonly appliedStyleRoots = new Map<Document | ShadowRoot, number /* usage */>();
 
   constructor(
     eventManager: EventManager,
     private readonly sharedStylesHost: SharedStylesHost,
     component: RendererType2,
+    // TODO: Compat?
     private removeStylesOnCompDestroy: boolean,
     doc: Document,
     ngZone: NgZone,
@@ -599,17 +628,18 @@ class NoneEncapsulationDomRenderer extends DefaultDomRenderer2 {
 
   applyStyles(styleRoot: StyleRoot): void {
     this.sharedStylesHost.addStyles(styleRoot, this.styles, this.styleUrls);
-    this.appliedStyleRoots.add(styleRoot);
+    const usage = this.appliedStyleRoots.get(styleRoot) ?? 0;
+    this.appliedStyleRoots.set(styleRoot, usage + 1);
   }
 
-  override destroy(): void {
-    if (!this.removeStylesOnCompDestroy) {
-      return;
-    }
-    if (allLeavingAnimations.size === 0) {
-      for (const styleRoot of this.appliedStyleRoots) {
-        this.sharedStylesHost.removeStyles(styleRoot, this.styles, this.styleUrls);
-      }
+  removeStyles(styleRoot: StyleRoot): void {
+    this.sharedStylesHost.removeStyles(styleRoot, this.styles, this.styleUrls);
+    const usages = this.appliedStyleRoots.get(styleRoot)!;
+    // TODO: assert usages
+    if (usages === 1) {
+      this.appliedStyleRoots.delete(styleRoot);
+    } else {
+      this.appliedStyleRoots.set(styleRoot, usages - 1);
     }
   }
 }

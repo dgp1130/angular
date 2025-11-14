@@ -80,6 +80,8 @@ export interface Renderer {
 
   /** TODO */
   applyStyles?(styleRoot: StyleRoot): void;
+  /** TODO */
+  removeStyles?(styleRoot: StyleRoot): void;
 }
 
 export interface RendererFactory {

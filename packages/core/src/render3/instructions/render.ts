@@ -12,14 +12,17 @@ import {assertEqual, assertNotReactive} from '../../util/assert';
 import {RenderFlags} from '../interfaces/definition';
 import {
   CONTEXT,
+  DECLARATION_LCONTAINER,
   FLAGS,
   HOST,
   HYDRATION,
   INJECTOR,
   LView,
   LViewFlags,
+  PARENT,
   QUERIES,
   RENDERER,
+  T_HOST,
   TVIEW,
   TView,
 } from '../interfaces/view';
@@ -27,9 +30,10 @@ import {profiler} from '../profiler';
 import {ProfilerEvent} from '../../../primitives/profiler/src/profiler_types';
 import {executeViewQueryFn, refreshContentQueries} from '../queries/query_execution';
 import {enterView, leaveView} from '../state';
-import {getComponentLViewByIndex, isCreationMode} from '../util/view_utils';
+import {getComponentLViewByIndex, getNativeByTNode, isCreationMode} from '../util/view_utils';
 
 import {executeTemplate} from './shared';
+import { NATIVE } from '../interfaces/container';
 
 export function renderComponent(hostLView: LView, componentHostIdx: number) {
   ngDevMode && assertEqual(isCreationMode(hostLView), true, 'Should be run in creation mode');
@@ -47,12 +51,12 @@ export function renderComponent(hostLView: LView, componentHostIdx: number) {
 
   renderView(componentTView, componentView, componentView[CONTEXT]);
 
-  if (hostRNode) {
+  if (hostRNode && hostRNode.parentNode) {
     const componentRenderer = componentView[RENDERER];
     const styleRoot = hostRNode.getRootNode() as StyleRoot;
     componentRenderer.applyStyles?.(styleRoot);
   } else {
-    // TODO: applyStyles anyways?
+    // Styles will be applied when attaching the view to a container.
   }
 
   profiler(ProfilerEvent.ComponentEnd, componentView[CONTEXT] as any as {});
