@@ -10,7 +10,7 @@ import {LContainer, TYPE} from './container';
 import {ComponentDef, DirectiveDef} from './definition';
 import {TNode, TNodeFlags, TNodeType} from './node';
 import {RNode} from './renderer_dom';
-import {FLAGS, LView, LViewFlags} from './view';
+import {FLAGS, LView, LViewFlags, TVIEW, TViewType} from './view';
 
 /**
  * True if `value` is `LView`.
@@ -47,6 +47,11 @@ export function isComponentDef<T>(def: DirectiveDef<T>): def is ComponentDef<T> 
 export function isRootView(target: LView): boolean {
   // Determines whether a given LView is marked as a root view.
   return (target[FLAGS] & LViewFlags.IsRoot) !== 0;
+}
+
+export function isEmbeddedView(target: LView): boolean {
+  // Determines whether a given LView is marked as an embedded view.
+  return target[TVIEW].type === TViewType.Embedded;
 }
 
 export function isProjectionTNode(tNode: TNode): boolean {
