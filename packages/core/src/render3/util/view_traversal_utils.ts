@@ -6,12 +6,14 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
+import {StyleRoot} from '../../render';
+import {assertStyleRoot} from '../../render/api';
 import {assertDefined} from '../../util/assert';
 import {assertLView} from '../assert';
 import {readPatchedLView} from '../context_discovery';
 import {CONTAINER_HEADER_OFFSET, LContainer} from '../interfaces/container';
 import {isLContainer, isLView, isRootView} from '../interfaces/type_checks';
-import {CHILD_HEAD, CONTEXT, LView, NEXT} from '../interfaces/view';
+import {CHILD_HEAD, CONTEXT, HOST, LView, NEXT, RENDERER} from '../interfaces/view';
 
 import {getLViewParent} from './view_utils';
 
@@ -79,5 +81,37 @@ function* walkChildren(parent: LView | LContainer): Generator<LView | LContainer
   while (child !== null) {
     yield child;
     child = child[NEXT];
+  }
+}
+
+/** Returns the {@link StyleRoot} where styles for the component should be applied. */
+export function getStyleRoot(component: {}): StyleRoot {
+  // TODO: skip for SSR?
+
+  const lView = readPatchedLView(component);
+  ngDevMode && assertLView(lView);
+
+  // const renderer = lView![RENDERER];
+  // if (renderer?.shadowRoot) return renderer.shadowRoot;
+
+  // for (const ancestor of walkAncestors(lView!)) {
+  //   const ancestorRenderer = ancestor[RENDERER];
+  //   if (ancestorRenderer?.shadowRoot) return ancestorRenderer.shadowRoot;
+  // }
+
+  const hostRNode = lView![HOST];
+  ngDevMode && assertDefined(hostRNode, 'hostRNode');
+
+  const rootNode = hostRNode!.getRootNode();
+  ngDevMode && assertStyleRoot(rootNode);
+  return rootNode as StyleRoot;
+}
+
+function* walkAncestors(lView: LView): Generator<LView, void, void> {
+  let currLView: LView | null = lView;
+  while (true) {
+    currLView = getLViewParent(currLView);
+    if (!currLView) return;
+    yield currLView;
   }
 }

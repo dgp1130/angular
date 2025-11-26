@@ -80,6 +80,9 @@ export interface Renderer {
 
   /** Attach any required stylesheets to the DOM. */
   applyStyles?(): void;
+
+  /** The component's internal shadow root if one is used. */
+  shadowRoot?: ShadowRoot;
 }
 
 export interface RendererFactory {
