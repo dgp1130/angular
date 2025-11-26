@@ -46,7 +46,7 @@ import {
 } from '../../src/core';
 import {ComponentFixture, TestBed, TestComponentRenderer} from '../../testing';
 import {clearTranslations, loadTranslations} from '@angular/localize';
-import {By, DomSanitizer} from '@angular/platform-browser';
+import {BrowserModule, By, DomSanitizer, platformBrowser} from '@angular/platform-browser';
 import {expect} from '@angular/private/testing/matchers';
 import {ANIMATION_QUEUE} from '../../src/animation/queue';
 
@@ -1415,6 +1415,7 @@ describe('ViewContainerRef', () => {
           {provide: ErrorHandler, useValue: TestBed.inject(ErrorHandler)},
           {provide: RendererFactory2, useValue: TestBed.inject(RendererFactory2)},
           {provide: ANIMATION_QUEUE, useValue: TestBed.inject(ANIMATION_QUEUE)},
+          BrowserModule,
         ],
       })
       class MyAppModule {}

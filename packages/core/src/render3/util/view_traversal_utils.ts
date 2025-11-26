@@ -14,7 +14,7 @@ import {assertLView} from '../assert';
 import {readPatchedLView} from '../context_discovery';
 import {CONTAINER_HEADER_OFFSET, LContainer} from '../interfaces/container';
 import {isLContainer, isLView, isRootView} from '../interfaces/type_checks';
-import {CHILD_HEAD, CONTEXT, HOST, INJECTOR, LView, NEXT, RENDERER} from '../interfaces/view';
+import {CHILD_HEAD, CONTEXT, HOST, INJECTOR, LView, NEXT} from '../interfaces/view';
 
 import {getLViewParent} from './view_utils';
 
@@ -91,6 +91,15 @@ function* walkChildren(parent: LView | LContainer): Generator<LView | LContainer
 export function getStyleRoot(component: {}): StyleRoot {
   const lView = readPatchedLView(component);
   ngDevMode && assertLView(lView);
+
+  // Skip for SSR where `getRootNode` is not supported. `getRootNode` is Baseline Widely Available,
+  // but DOM emulation libraries don't support it. We could use `isPlatformServer`, but unit tests
+  // run Angular with platform browser inside a Node environment, so the best solution is to feature
+  // detect on `getRootNode`.
+  if (!Node.prototype.getRootNode) {
+    const injector = lView![INJECTOR];
+    return injector.get(DOCUMENT);
+  }
 
   // const renderer = lView![RENDERER];
   // if (renderer?.shadowRoot) return renderer.shadowRoot;
