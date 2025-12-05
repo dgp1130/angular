@@ -495,6 +495,7 @@
       "isBoundToModule",
       "isComponentDef",
       "isComponentHost",
+      "isComponentInstance",
       "isContentQueryHost",
       "isCurrentTNodeParent",
       "isDestroyed",

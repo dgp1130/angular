@@ -7,7 +7,6 @@
  */
 
 import {retrieveHydrationInfo} from '../../hydration/utils';
-import {assertStyleRoot, StyleRoot} from '../../render/api';
 import {assertDefined, assertEqual, assertNotReactive} from '../../util/assert';
 import {RenderFlags} from '../interfaces/definition';
 import {
@@ -52,14 +51,14 @@ export function renderComponent(hostLView: LView, componentHostIdx: number) {
     if (hostRNode?.isConnected) {
       // Element is already attached to the DOM, apply its styles immediately.
       ngDevMode && assertDefined(componentView[CONTEXT], 'component instance');
-      const componentInstance = componentView[CONTEXT]!;
-      const styleRoot = getStyleRoot(componentInstance);
+      const styleRoot = getStyleRoot(componentView);
+      ngDevMode && assertDefined(styleRoot, 'styleRoot');
 
       const componentRenderer = componentView[RENDERER];
-      componentRenderer.applyStyles?.(styleRoot);
+      componentRenderer.applyStyles?.(styleRoot!);
       componentView[ON_DESTROY_HOOKS] ??= [];
       componentView[ON_DESTROY_HOOKS].push(() => {
-        componentRenderer.removeStyles?.(styleRoot);
+        componentRenderer.removeStyles?.(styleRoot!);
       });
     } else {
       // Element is *not* attached to the DOM, can't know where its styles should go.

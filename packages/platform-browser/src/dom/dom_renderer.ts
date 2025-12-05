@@ -31,7 +31,7 @@ import {
 import {RuntimeErrorCode} from '../errors';
 
 import {EventManager} from './events/event_manager';
-import {createLinkElement, SharedStylesHost} from './shared_styles_host';
+import {SharedStylesHost} from './shared_styles_host';
 
 export const NAMESPACE_URIS: {[ns: string]: string} = {
   'svg': 'http://www.w3.org/2000/svg',
@@ -68,6 +68,9 @@ export const REMOVE_STYLES_ON_COMPONENT_DESTROY = new InjectionToken<boolean>(
     factory: () => REMOVE_STYLES_ON_COMPONENT_DESTROY_DEFAULT,
   },
 );
+
+/** Set of all legacy (`ViewEncapsulation.ShadowDom` and not `ViewEncapsulation.IsolatedShadowDom`) shadow roots. */
+const allLegacyShadowRoots = new Set<ShadowRoot>();
 
 export function shimContentAttribute(componentShortId: string): string {
   return CONTENT_ATTR.replace(COMPONENT_REGEX, componentShortId);
@@ -485,8 +488,6 @@ function isTemplateNode(node: any): node is HTMLTemplateElement {
 }
 
 class ShadowDomRenderer extends DefaultDomRenderer2 {
-  private static allShadowRoots = new Set<ShadowRoot>();
-
   shadowRoot: ShadowRoot;
 
   constructor(
@@ -501,7 +502,9 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
   ) {
     super(eventManager, doc, ngZone, platformIsServer, tracingService);
     this.shadowRoot = (hostEl as any).attachShadow({mode: 'open'});
-    ShadowDomRenderer.allShadowRoots.add(this.shadowRoot);
+    if (this.component.encapsulation === ViewEncapsulation.ShadowDom) {
+      allLegacyShadowRoots.add(this.shadowRoot);
+    }
   }
 
   applyStyles(styleRoot: StyleRoot): void {
@@ -513,23 +516,7 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
     }
 
     styles = shimStylesContent(this.component.id, styles);
-
-    switch (this.component.encapsulation) {
-      case ViewEncapsulation.ShadowDom: {
-        // Legacy behavior for backwards compatibility, add styles to *all* shadow roots in the application.
-        for (const styleRoot of ShadowDomRenderer.allShadowRoots) {
-          this.sharedStylesHost.addStyles(styleRoot, styles, this.component.getExternalStyles?.());
-        }
-        break;
-      } case ViewEncapsulation.ExperimentalIsolatedShadowDom: {
-        this.sharedStylesHost.addStyles(styleRoot, styles, this.component.getExternalStyles?.());
-        break;
-      } default: {
-        if (typeof ngDevMode !== 'undefined' && ngDevMode) {
-          throw new Error(`\`ViewEncapsulation\` mode ${this.component.encapsulation} is not shadow DOM.`);
-        }
-      }
-    }
+    this.sharedStylesHost.addStyles(styleRoot, styles, this.component.getExternalStyles?.());
   }
 
   removeStyles(styleRoot: StyleRoot): void {
@@ -541,20 +528,7 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
     }
 
     styles = shimStylesContent(this.component.id, styles);
-
-    switch (this.component.encapsulation) {
-      case ViewEncapsulation.ShadowDom: {
-        // Legacy behavior for backwards compatibility, leave styles in the document forever.
-        break;
-      } case ViewEncapsulation.ExperimentalIsolatedShadowDom: {
-        this.sharedStylesHost.removeStyles(styleRoot, styles, this.component.getExternalStyles?.());
-        break;
-      } default: {
-        if (typeof ngDevMode !== 'undefined' && ngDevMode) {
-          throw new Error(`\`ViewEncapsulation\` mode ${this.component.encapsulation} is not shadow DOM.`);
-        }
-      }
-    }
+    this.sharedStylesHost.removeStyles(styleRoot, styles, this.component.getExternalStyles?.());
   }
 
   private nodeOrShadowRoot(node: any): any {
@@ -578,7 +552,7 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
   }
 
   override destroy() {
-    ShadowDomRenderer.allShadowRoots.delete(this.shadowRoot);
+    allLegacyShadowRoots.delete(this.shadowRoot);
   }
 }
 
@@ -609,8 +583,12 @@ class NoneEncapsulationDomRenderer extends DefaultDomRenderer2 {
     this.styleUrls = component.getExternalStyles?.(compId);
   }
 
-  applyStyles(styleRoot: StyleRoot): void {
-    this.sharedStylesHost.addStyles(styleRoot, this.styles, this.styleUrls);
+  applyStyles(_styleRoot: StyleRoot): void {
+
+
+    for (const styleRoot of allLegacyShadowRoots) {
+      this.sharedStylesHost.addStyles(styleRoot, this.styles, this.styleUrls);
+    }
   }
 
   removeStyles(styleRoot: StyleRoot): void {

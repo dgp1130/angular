@@ -609,6 +609,7 @@
       "isBoundToModule",
       "isComponentDef",
       "isComponentHost",
+      "isComponentInstance",
       "isContentQueryHost",
       "isCssClassMatching",
       "isCurrentTNodeParent",

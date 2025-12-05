@@ -8,13 +8,13 @@
 
 import {DOCUMENT} from '../../document';
 import {StyleRoot} from '../../render';
-import {assertStyleRoot} from '../../render/api';
+import {asStyleRoot} from '../../render/api';
 import {assertDefined} from '../../util/assert';
 import {assertLView} from '../assert';
 import {readPatchedLView} from '../context_discovery';
 import {CONTAINER_HEADER_OFFSET, LContainer} from '../interfaces/container';
 import {isLContainer, isLView, isRootView} from '../interfaces/type_checks';
-import {CHILD_HEAD, CONTEXT, HOST, INJECTOR, LView, NEXT} from '../interfaces/view';
+import {CHILD_HEAD, CONTEXT, HOST, INJECTOR, LView, NEXT, RENDERER} from '../interfaces/view';
 
 import {getLViewParent} from './view_utils';
 
@@ -88,22 +88,7 @@ function* walkChildren(parent: LView | LContainer): Generator<LView | LContainer
 }
 
 /** Returns the {@link StyleRoot} where styles for the component should be applied. */
-export function getStyleRoot(component: {}): StyleRoot {
-  const lView = readPatchedLView(component);
-  ngDevMode && assertLView(lView);
-
-  // Skip for SSR where `getRootNode` is not supported. `getRootNode` is Baseline Widely Available,
-  // but DOM emulation libraries don't support it. We could use `isPlatformServer`, but unit tests
-  // run Angular with platform browser inside a Node environment, so the best solution is to feature
-  // detect on `getRootNode`.
-  if (!Node.prototype.getRootNode) {
-    const injector = lView![INJECTOR];
-    return injector.get(DOCUMENT);
-  }
-
-  // const renderer = lView![RENDERER];
-  // if (renderer?.shadowRoot) return renderer.shadowRoot;
-
+export function getStyleRoot(lView: LView): StyleRoot | undefined {
   // for (const ancestor of walkAncestors(lView!)) {
   //   const ancestorRenderer = ancestor[RENDERER];
   //   if (ancestorRenderer?.shadowRoot) return ancestorRenderer.shadowRoot;
@@ -119,14 +104,14 @@ export function getStyleRoot(component: {}): StyleRoot {
     return doc;
   }
 
-  const componentLView = isRootView(lView!) ? (lView![CHILD_HEAD] as LView<unknown>) : lView;
-  ngDevMode && assertLView(componentLView);
-  const hostRNode = componentLView![HOST];
+  const renderer = lView![RENDERER];
+  if (renderer?.shadowRoot) return renderer.shadowRoot;
+
+  const hostRNode = lView![HOST];
   ngDevMode && assertDefined(hostRNode, 'hostRNode');
 
   const rootNode = hostRNode!.getRootNode();
-  ngDevMode && assertStyleRoot(rootNode);
-  return rootNode as StyleRoot;
+  return asStyleRoot(rootNode);
 }
 
 function* walkAncestors(lView: LView): Generator<LView, void, void> {

@@ -18,12 +18,15 @@ export type StyleRoot = Document | ShadowRoot;
 
 /**
  * Asserts that the given node is a {@link StyleRoot}. Useful for converting the return value of
- * {@link Node.prototype.getRootNode} into a {@link StyleRoot}.
+ * {@link Node.prototype.getRootNode} into a {@link StyleRoot}. If the root is a detached node,
+ * this returns `undefined` as there is no meaningful style root to attach styles to.
  */
-export function assertStyleRoot(root: Node): asserts root is StyleRoot {
-  if (!(root instanceof Document || root instanceof ShadowRoot)) {
-    throw new Error('Expected a `Document` or `ShadowRoot`, is this node detached from the document?');
+export function asStyleRoot(root: Node): StyleRoot | undefined {
+  if (root instanceof Document || root instanceof ShadowRoot) {
+    return root;
   }
+
+  return undefined;
 }
 
 /**

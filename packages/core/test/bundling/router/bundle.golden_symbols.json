@@ -792,6 +792,7 @@
       "isCommandWithOutlets",
       "isComponentDef",
       "isComponentHost",
+      "isComponentInstance",
       "isContentQueryHost",
       "isCreationMode",
       "isCssClassMatching",

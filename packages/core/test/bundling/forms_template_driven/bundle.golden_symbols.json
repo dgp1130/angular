@@ -690,6 +690,7 @@
       "isClassProvider",
       "isComponentDef",
       "isComponentHost",
+      "isComponentInstance",
       "isComponentResourceResolutionQueueEmpty",
       "isContentQueryHost",
       "isCssClassMatching",

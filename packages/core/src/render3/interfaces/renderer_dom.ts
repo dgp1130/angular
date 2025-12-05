@@ -95,6 +95,7 @@ export interface RElement extends RNode {
   removeEventListener(type: string, listener?: EventListener, options?: boolean): void;
   remove(): void;
   setProperty?(name: string, value: any): void;
+  shadowRoot: ShadowRoot | null;
 }
 
 export interface RCssStyleDeclaration {

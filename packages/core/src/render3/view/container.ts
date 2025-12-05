@@ -6,11 +6,10 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {assertStyleRoot, StyleRoot} from '../../render/api';
 import {addToArray, removeFromArray} from '../../util/array_utils';
 import {assertDefined, assertEqual} from '../../util/assert';
 import {assertLContainer, assertLView} from '../assert';
-import { isComponentInstance } from '../context_discovery';
+import {isComponentInstance} from '../context_discovery';
 import {
   CONTAINER_HEADER_OFFSET,
   LContainer,
@@ -119,16 +118,18 @@ export function addLViewToLContainer(
     if (parentRNode !== null) {
       addViewToDOM(tView, lContainer[T_HOST], renderer, lView, parentRNode, beforeNode);
 
-    // TODO: Prepend self?
-    for (const descendant of walkDescendants(lView)) {
-      if (!descendant || isLContainer(descendant)) continue;
+      // TODO: Prepend self?
+      for (const descendant of walkDescendants(lView)) {
+        if (!descendant || isLContainer(descendant)) continue;
 
-      // Element is already attached to the DOM, apply its styles immediately.
-      const componentRenderer = descendant[RENDERER];
-      const componentInstance = isComponentInstance(descendant[CONTEXT]) ? descendant[CONTEXT] : undefined;
-      if (componentRenderer?.applyStyles && componentInstance) {
-        const styleRoot = getStyleRoot(componentInstance);
-        componentRenderer.applyStyles(styleRoot);
+        // Element is already attached to the DOM, apply its styles immediately.
+        const componentRenderer = descendant[RENDERER];
+        const componentInstance = isComponentInstance(descendant[CONTEXT]) ? descendant[CONTEXT] : undefined;
+        if (componentRenderer?.applyStyles && componentInstance) {
+          const styleRoot = getStyleRoot(descendant);
+          ngDevMode && assertDefined(styleRoot, 'styleRoot');
+          componentRenderer.applyStyles(styleRoot!);
+        }
       }
     }
   }
@@ -186,8 +187,10 @@ export function detachView(lContainer: LContainer, removeIndex: number): LView |
       const renderer = descendant[RENDERER];
       const componentInstance = isComponentInstance(descendant[CONTEXT]) ? descendant[CONTEXT] : undefined;
       if (hostRNode && renderer?.removeStyles && componentInstance) {
-        const styleRoot = getStyleRoot(componentInstance);
-        renderer.removeStyles(styleRoot);
+        // Component might already have been detached and removed from the DOM if it was manually destroyed
+        // while present in a `ViewContainerRef`.
+        const styleRoot = getStyleRoot(descendant);
+        if (styleRoot) renderer.removeStyles(styleRoot);
       }
     }
 

@@ -128,7 +128,6 @@ export {ENABLE_ROOT_COMPONENT_BOOTSTRAP as ɵENABLE_ROOT_COMPONENT_BOOTSTRAP} fr
 export {ReflectionCapabilities as ɵReflectionCapabilities} from './reflection/reflection_capabilities';
 export {
   AnimationRendererType as ɵAnimationRendererType,
-  assertStyleRoot as ɵassertStyleRoot,
 } from './render/api';
 export {
   InjectorProfilerContext as ɵInjectorProfilerContext,
