@@ -47,8 +47,9 @@ export class PendingTasks {
    * Adds a new task that should block application's stability.
    * @returns A cleanup function that removes a task when called.
    */
-  add(): () => void {
+  add(taskFunction?: () => Promise<unknown>): () => void {
     const taskId = this.internalPendingTasks.add();
+    if (taskFunction) this.internalPendingTasks.setTaskFunction(taskId, taskFunction);
     return () => {
       if (!this.internalPendingTasks.has(taskId)) {
         // This pending task has already been cleared.
@@ -74,7 +75,7 @@ export class PendingTasks {
    * @developerPreview 19.0
    */
   run(fn: () => Promise<unknown>): void {
-    const removeTask = this.add();
+    const removeTask = this.add(fn);
     fn().catch(this.errorHandler).finally(removeTask);
   }
 

@@ -341,6 +341,17 @@ export class ApplicationRef {
    * @returns A promise that resolves when the application becomes stable
    */
   whenStable(): Promise<void> {
+    const timeoutCtrl = new AbortController();
+    const handle = setTimeout(() => {
+      console.warn(
+        'Long wait for application to become stable. The following tasks did not complete:',
+      );
+      console.warn(...this.internalPendingTask.getPendingTasks());
+    }, 5_000);
+    timeoutCtrl.signal.addEventListener('abort', () => {
+      clearTimeout(handle);
+    });
+
     let subscription: Subscription;
     return new Promise<void>((resolve) => {
       subscription = this.isStable.subscribe({
@@ -352,6 +363,7 @@ export class ApplicationRef {
       });
     }).finally(() => {
       subscription.unsubscribe();
+      timeoutCtrl.abort();
     });
   }
 

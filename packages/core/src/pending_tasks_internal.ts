@@ -19,12 +19,19 @@ export class PendingTasksInternal implements OnDestroy {
   private taskId = 0;
   private pendingTasks = new Set<number>();
   private destroyed = false;
+  private readonly taskFunctionMap = new Map<number, () => void>();
 
   private pendingTask = new BehaviorSubject<boolean>(false);
 
   get hasPendingTasks(): boolean {
     // Accessing the value of a closed `BehaviorSubject` throws an error.
     return this.destroyed ? false : this.pendingTask.value;
+  }
+
+  getPendingTasks(): ReadonlySet<() => void> {
+    return new Set(
+      Array.from(this.pendingTasks.values()).map((id) => this.taskFunctionMap.get(id)!),
+    );
   }
 
   /**
@@ -59,9 +66,18 @@ export class PendingTasksInternal implements OnDestroy {
 
   remove(taskId: number): void {
     this.pendingTasks.delete(taskId);
+    this.taskFunctionMap.delete(taskId);
     if (this.pendingTasks.size === 0 && this.hasPendingTasks) {
       this.pendingTask.next(false);
     }
+  }
+
+  getTaskFunction(taskId: number): () => void {
+    return this.taskFunctionMap.get(taskId)!;
+  }
+
+  setTaskFunction(taskId: number, fn: () => void): void {
+    this.taskFunctionMap.set(taskId, fn);
   }
 
   ngOnDestroy(): void {

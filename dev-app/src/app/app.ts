@@ -1,4 +1,11 @@
-import {Component, signal} from '@angular/core';
+import {
+  afterNextRender,
+  ApplicationRef,
+  Component,
+  inject,
+  PendingTasks,
+  signal,
+} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 
 @Component({
@@ -8,5 +15,18 @@ import {RouterOutlet} from '@angular/router';
   styleUrl: './app.css',
 })
 export class App {
+  private readonly pendingTasks = inject(PendingTasks);
+  private readonly appRef = inject(ApplicationRef);
+
   protected readonly title = signal('dev-app');
+
+  constructor() {
+    afterNextRender(() => {
+      this.pendingTasks.run(() => new Promise(() => {}));
+    });
+
+    this.appRef.whenStable().then(() => {
+      console.log('Application is stable!');
+    });
+  }
 }

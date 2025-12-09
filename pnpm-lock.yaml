@@ -800,6 +800,9 @@ importers:
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+      zone.js:
+        specifier: workspace:*
+        version: link:../packages/zone.js
     devDependencies:
       '@angular/build':
         specifier: 21.1.0-next.1
