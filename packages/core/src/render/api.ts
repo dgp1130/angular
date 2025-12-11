@@ -32,8 +32,10 @@ export type StyleRoot = Document | ShadowRoot;
 export function asStyleRoot(root: Node): StyleRoot | undefined {
   // Need to feature-detect `ShadowRoot` for Node environments where DOM emulation does not
   // support it.
-  if (root instanceof Document ||
-      (typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot)) {
+  if (
+    root instanceof Document ||
+    (typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot)
+  ) {
     return root;
   }
 
@@ -272,7 +274,10 @@ export abstract class Renderer2 {
   shadowRoot?: ShadowRoot;
 
   /** Attach any required stylesheets to the DOM. */
-  abstract applyStyles?(): void;
+  abstract applyStyles?(styleRoot: StyleRoot): void;
+
+  /** Detach any stylesheets from the DOM. */
+  abstract removeStyles?(styleRoot: StyleRoot): void;
 
   /**
    * @internal
