@@ -9,7 +9,6 @@
 import {DOCUMENT, ɵgetDOM as getDOM} from '@angular/common';
 import {
   APP_ID,
-  CSP_NONCE,
   Inject,
   Injectable,
   InjectionToken,
@@ -26,12 +25,13 @@ import {
   ɵTracingSnapshot as TracingSnapshot,
   Optional,
   ɵallLeavingAnimations as allLeavingAnimations,
+  StyleRoot,
 } from '@angular/core';
 
 import {RuntimeErrorCode} from '../errors';
 
 import {EventManager} from './events/event_manager';
-import {createLinkElement, SharedStylesHost} from './shared_styles_host';
+import {SharedStylesHost} from './shared_styles_host';
 
 export const NAMESPACE_URIS: {[ns: string]: string} = {
   'svg': 'http://www.w3.org/2000/svg',
@@ -68,6 +68,9 @@ export const REMOVE_STYLES_ON_COMPONENT_DESTROY = new InjectionToken<boolean>(
     factory: () => REMOVE_STYLES_ON_COMPONENT_DESTROY_DEFAULT,
   },
 );
+
+/** Set of all legacy (`ViewEncapsulation.ShadowDom` and not `ViewEncapsulation.IsolatedShadowDom`) shadow roots. */
+const allLegacyShadowRoots = new Set<ShadowRoot>();
 
 export function shimContentAttribute(componentShortId: string): string {
   return CONTENT_ATTR.replace(COMPONENT_REGEX, componentShortId);
@@ -143,7 +146,6 @@ export class DomRendererFactory2 implements RendererFactory2, OnDestroy {
     @Inject(REMOVE_STYLES_ON_COMPONENT_DESTROY) private removeStylesOnCompDestroy: boolean,
     @Inject(DOCUMENT) private readonly doc: Document,
     readonly ngZone: NgZone,
-    @Inject(CSP_NONCE) private readonly nonce: string | null = null,
     @Inject(TracingService)
     @Optional()
     private readonly tracingService: TracingService<TracingSnapshot> | null = null,
@@ -173,10 +175,7 @@ export class DomRendererFactory2 implements RendererFactory2, OnDestroy {
       type = {...type, encapsulation: ViewEncapsulation.Emulated};
     }
 
-    const renderer = this.getOrCreateRenderer(element, type);
-    renderer.applyStyles?.();
-
-    return renderer;
+    return this.getOrCreateRenderer(element, type);
   }
 
   private getOrCreateRenderer(element: any, type: RendererType2): Renderer2 {
@@ -208,17 +207,6 @@ export class DomRendererFactory2 implements RendererFactory2, OnDestroy {
           );
           break;
         case ViewEncapsulation.ShadowDom:
-          return new ShadowDomRenderer(
-            eventManager,
-            element,
-            type,
-            doc,
-            ngZone,
-            this.nonce,
-            platformIsServer,
-            tracingService,
-            sharedStylesHost,
-          );
         case ViewEncapsulation.ExperimentalIsolatedShadowDom:
           return new ShadowDomRenderer(
             eventManager,
@@ -226,9 +214,9 @@ export class DomRendererFactory2 implements RendererFactory2, OnDestroy {
             type,
             doc,
             ngZone,
-            this.nonce,
             platformIsServer,
             tracingService,
+            sharedStylesHost,
           );
 
         default:
@@ -508,21 +496,31 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
     private readonly component: RendererType2,
     doc: Document,
     ngZone: NgZone,
-    private readonly nonce: string | null,
     platformIsServer: boolean,
     tracingService: TracingService<TracingSnapshot> | null,
-    private sharedStylesHost?: SharedStylesHost,
+    private sharedStylesHost: SharedStylesHost,
   ) {
     super(eventManager, doc, ngZone, platformIsServer, tracingService);
     this.shadowRoot = (hostEl as any).attachShadow({mode: 'open'});
+    if (this.component.encapsulation === ViewEncapsulation.ShadowDom) {
+      allLegacyShadowRoots.add(this.shadowRoot);
+    }
   }
 
-  applyStyles(): void {
-    // SharedStylesHost is used to add styles to the shadow root by ShadowDom.
-    // This is optional as it is not used by ExperimentalIsolatedShadowDom.
-    if (this.sharedStylesHost) {
-      this.sharedStylesHost.addHost(this.shadowRoot);
-    }
+  // HACK: HMR modifies the component definition mid-execution, meaning an
+  // `applyStyles` followed by a `removeStyles` can have different style content
+  // and confuse `SharedStylesHost`. Therefore we keep a references of the
+  // previously applied styles to ensure that the same thing is removed later even
+  // if the component definition has changed.
+  //
+  // Ideally, HMR should be able to `removeStyles` with the *old* component
+  // definition and then `applyStyles` with the *new* component definition, but
+  // this seems to be a more complicated refactor to make right now.
+  //
+  // TODO: Do this for other encapsulation modes too?
+  private appliedStyles: [inline: string[], external?: string[]] | undefined = undefined;
+
+  applyStyles(styleRoot: StyleRoot): void {
     let styles = this.component.styles;
     if (ngDevMode) {
       // We only do this in development, as for production users should not add CSS sourcemaps to components.
@@ -531,34 +529,19 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
     }
 
     styles = shimStylesContent(this.component.id, styles);
+    const externalStyles = this.component.getExternalStyles?.();
+    this.sharedStylesHost.addStyles(styleRoot, styles, externalStyles);
+    this.appliedStyles = [styles, externalStyles];
+  }
 
-    for (const style of styles) {
-      const styleEl = document.createElement('style');
-
-      if (this.nonce) {
-        styleEl.setAttribute('nonce', this.nonce);
-      }
-
-      styleEl.textContent = style;
-      this.shadowRoot.appendChild(styleEl);
+  removeStyles(styleRoot: StyleRoot): void {
+    if (typeof ngDevMode !== 'undefined' && ngDevMode && !this.appliedStyles) {
+      throw new Error(`Expected styles to already be applied.`);
     }
 
-    // Apply any external component styles to the shadow root for the component's element.
-    // The ShadowDOM renderer uses an alternative execution path for component styles that
-    // does not use the SharedStylesHost that other encapsulation modes leverage. Much like
-    // the manual addition of embedded styles directly above, any external stylesheets
-    // must be manually added here to ensure ShadowDOM components are correctly styled.
-    // TODO: Consider reworking the DOM Renderers to consolidate style handling.
-    const styleUrls = this.component.getExternalStyles?.();
-    if (styleUrls) {
-      for (const styleUrl of styleUrls) {
-        const linkEl = createLinkElement(styleUrl, this.doc);
-        if (this.nonce) {
-          linkEl.setAttribute('nonce', this.nonce);
-        }
-        this.shadowRoot.appendChild(linkEl);
-      }
-    }
+    const [styles, externalStyes] = this.appliedStyles!;
+    this.sharedStylesHost.removeStyles(styleRoot, styles, externalStyes);
+    this.appliedStyles = undefined;
   }
 
   private nodeOrShadowRoot(node: any): any {
@@ -582,9 +565,7 @@ class ShadowDomRenderer extends DefaultDomRenderer2 {
   }
 
   override destroy() {
-    if (this.sharedStylesHost) {
-      this.sharedStylesHost.removeHost(this.shadowRoot);
-    }
+    allLegacyShadowRoots.delete(this.shadowRoot);
   }
 }
 
@@ -615,16 +596,51 @@ class NoneEncapsulationDomRenderer extends DefaultDomRenderer2 {
     this.styleUrls = component.getExternalStyles?.(compId);
   }
 
-  applyStyles(): void {
-    this.sharedStylesHost.addStyles(this.styles, this.styleUrls);
+  applyStyles(styleRoot: StyleRoot): void {
+    // TODO: Apply styles on legacy shadow root creation afterwards?
+
+    const isShadowRoot = styleRoot instanceof ShadowRoot;
+    const isIsolatedShadowRoot = isShadowRoot && !allLegacyShadowRoots.has(styleRoot as ShadowRoot);
+    if (isIsolatedShadowRoot) {
+      // For isolated shadow roots, we limit to the one usage.
+      this.sharedStylesHost.addStyles(styleRoot, this.styles, this.styleUrls);
+    } else {
+      // Legacy behavior: Always add to the document and all legacy shadow roots.
+      // `ViewEncapsulation.ShadowDom` incorrectly puts styles on more shadow
+      // roots than necessary and we must retain that broken behavior for
+      // backwards compatibility.
+      this.sharedStylesHost.addStyles(this.doc, this.styles, this.styleUrls);
+      for (const styleRoot of allLegacyShadowRoots) {
+        this.sharedStylesHost.addStyles(styleRoot, this.styles, this.styleUrls);
+      }
+    }
   }
 
-  override destroy(): void {
+  removeStyles(styleRoot: StyleRoot): void {
     if (!this.removeStylesOnCompDestroy) {
       return;
     }
+
+    // TODO: Problematic?
     if (allLeavingAnimations.size === 0) {
-      this.sharedStylesHost.removeStyles(this.styles, this.styleUrls);
+      const isShadowRoot = styleRoot instanceof ShadowRoot;
+      const isIsolatedShadowRoot =
+        isShadowRoot && !allLegacyShadowRoots.has(styleRoot as ShadowRoot);
+      if (isIsolatedShadowRoot) {
+        // For isolated shadow roots, we limit to the one usage.
+        this.sharedStylesHost.removeStyles(styleRoot, this.styles, this.styleUrls);
+      } else {
+        // Legacy behavior: Always remove a usage from the document and all legacy
+        // shadow roots.
+        // `ViewEncapsulation.ShadowDom` incorrectly puts styles on more shadow
+        // roots than necessary and does not remove them from any until it is
+        // unused in *all*. We must retain that broken behavior for backwards
+        // compatibility.
+        this.sharedStylesHost.removeStyles(this.doc, this.styles, this.styleUrls);
+        for (const styleRoot of allLegacyShadowRoots) {
+          this.sharedStylesHost.removeStyles(styleRoot, this.styles, this.styleUrls);
+        }
+      }
     }
   }
 }
@@ -661,8 +677,8 @@ class EmulatedEncapsulationDomRenderer2 extends NoneEncapsulationDomRenderer {
     this.hostAttr = shimHostAttribute(compId);
   }
 
-  override applyStyles(): void {
-    super.applyStyles();
+  override applyStyles(styleRoot: StyleRoot): void {
+    super.applyStyles(styleRoot);
     this.setAttribute(this.hostEl, this.hostAttr, '');
   }
 

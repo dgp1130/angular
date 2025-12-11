@@ -87,6 +87,13 @@ function* walkChildren(parent: LView | LContainer): Generator<LView | LContainer
   }
 }
 
+/** Combine multiple iterables into a single stream with the same ordering. */
+export function* concat<T>(...iterables: Array<Iterable<T>>): Iterable<T> {
+  for (const iterable of iterables) {
+    yield* iterable;
+  }
+}
+
 /** Returns the {@link StyleRoot} where styles for the component should be applied. */
 export function getStyleRoot(lView: LView): StyleRoot | undefined {
   // DOM emulation does not support shadow DOM and `Node.prototype.getRootNode`, so we
