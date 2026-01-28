@@ -41,6 +41,7 @@ import {
   RendererFactory2,
   RendererType2,
   Sanitizer,
+  SHARED_STYLES_HOST,
   signal,
   TemplateRef,
   ViewChild,
@@ -49,6 +50,7 @@ import {
   ɵsetDocument,
 } from '../../src/core';
 import {ComponentFixture, TestBed, TestComponentRenderer} from '../../testing';
+import {SharedStylesHost} from '@angular/platform-browser/src/dom/shared_styles_host';
 
 describe('ViewContainerRef', () => {
   /**
@@ -1410,6 +1412,7 @@ describe('ViewContainerRef', () => {
           {provide: ErrorHandler, useValue: TestBed.inject(ErrorHandler)},
           {provide: RendererFactory2, useValue: TestBed.inject(RendererFactory2)},
           {provide: ANIMATION_QUEUE, useValue: TestBed.inject(ANIMATION_QUEUE)},
+          {provide: SHARED_STYLES_HOST, useExisting: SharedStylesHost},
         ],
       })
       class MyAppModule {}

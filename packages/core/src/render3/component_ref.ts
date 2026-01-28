@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
+import {DOCUMENT} from '../document';
 import {setActiveConsumer} from '../../primitives/signals';
 
 import {ChangeDetectorRef} from '../change_detection/change_detector_ref';
@@ -59,7 +60,10 @@ import {
   TView,
   TVIEW,
   TViewType,
+  INJECTOR,
+  CLEANUP,
 } from './interfaces/view';
+import {SHARED_STYLES_HOST} from './interfaces/shared_styles_host';
 import {MATH_ML_NAMESPACE, SVG_NAMESPACE} from './namespaces';
 
 import {retrieveHydrationInfo} from '../hydration/utils';
@@ -302,6 +306,23 @@ export class ComponentFactory<T> extends AbstractComponentFactory<T> {
       );
 
       rootLView[HEADER_OFFSET] = hostElement;
+
+      // Check the root node (containing shadow root or document) and provide stylesheets there.
+      // If the created component is detached from the document, this will be `null` and stylesheets
+      // will be tracked once the component is attached to the document.
+      const rootNode = hostElement.getRootNode?.();
+      const sharedStylesHost = rootLView[INJECTOR].get(SHARED_STYLES_HOST);
+      const isShadowRoot =
+        rootNode && typeof ShadowRoot !== 'undefined' && rootNode instanceof ShadowRoot;
+      rootLView[CLEANUP] ??= [];
+      if (isShadowRoot) {
+        sharedStylesHost.addHost(rootNode);
+        rootLView[CLEANUP].push(() => void sharedStylesHost.removeHost(rootNode));
+      } else {
+        const doc = rootLView[INJECTOR].get(DOCUMENT);
+        sharedStylesHost.addHost(doc.head);
+        rootLView[CLEANUP].push(() => void sharedStylesHost.removeHost(doc.head));
+      }
 
       // rootView is the parent when bootstrapping
       // TODO(misko): it looks like we are entering view here but we don't really need to as

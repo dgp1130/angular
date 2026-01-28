@@ -23,4 +23,4 @@ export interface SharedStylesHost {
 /**
  * Token used to retrieve the `SharedStylesHost` in `core`.
  */
-export const SHARED_STYLES_HOST = new InjectionToken<SharedStylesHost>('SharedStylesHost');
+export const SHARED_STYLES_HOST = new InjectionToken<SharedStylesHost>('SHARED_STYLES_HOST');

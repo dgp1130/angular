@@ -25,6 +25,8 @@ import {
   ViewChild,
   ViewContainerRef,
   ViewEncapsulation,
+  EnvironmentInjector,
+  createEnvironmentInjector,
 } from '../../src/core';
 import {ComponentFactory} from '../../src/linker/component_factory';
 import {RendererFactory2} from '../../src/render/api';
@@ -127,7 +129,12 @@ describe('ComponentFactory', () => {
           providers: [{provide: RendererFactory2, useValue: rendererFactorySpy}],
         });
 
-        cf.create(injector);
+        cf.create(
+          injector,
+          /* projectableNodes */ undefined,
+          /* rootSelectorOrNode */ undefined,
+          /* environmentInjector */ TestBed.inject(EnvironmentInjector),
+        );
 
         expect(rendererFactorySpy.wasCalled).toBeTrue();
       });
@@ -141,7 +148,12 @@ describe('ComponentFactory', () => {
           ],
         });
 
-        cf.create(injector);
+        cf.create(
+          injector,
+          /* projectableNodes */ undefined,
+          /* rootSelectorOrNode */ undefined,
+          /* environmentInjector */ TestBed.inject(EnvironmentInjector),
+        );
 
         expect(sanitizerFactorySpy).toHaveBeenCalled();
       });
@@ -154,7 +166,12 @@ describe('ComponentFactory', () => {
         });
         const mInjector = Injector.create({providers: [THROWING_RENDERER_FACTOR2_PROVIDER]});
 
-        cf.create(injector, undefined, undefined, {injector: mInjector} as NgModuleRef<any>);
+        cf.create(
+          injector,
+          /* projectableNodes */ undefined,
+          /* rootSelectorOrNode */ undefined,
+          /* environmentInjector */ TestBed.inject(EnvironmentInjector),
+        );
 
         expect(rendererFactorySpy.wasCalled).toBeTrue();
       });
@@ -165,7 +182,12 @@ describe('ComponentFactory', () => {
           providers: [{provide: RendererFactory2, useValue: rendererFactorySpy}],
         });
 
-        cf.create(injector, undefined, undefined, {injector: mInjector} as NgModuleRef<any>);
+        cf.create(
+          injector,
+          /* projectableNodes */ undefined,
+          /* rootSelectorOrNode */ undefined,
+          /* environmentInjector */ TestBed.inject(EnvironmentInjector),
+        );
 
         expect(rendererFactorySpy.wasCalled).toBeTrue();
       });
@@ -188,7 +210,12 @@ describe('ComponentFactory', () => {
           ],
         });
 
-        cf.create(injector, undefined, undefined, {injector: mInjector} as NgModuleRef<any>);
+        cf.create(
+          injector,
+          /* projectableNodes */ undefined,
+          /* rootSelectorOrNode */ undefined,
+          /* environmentInjector */ TestBed.inject(EnvironmentInjector),
+        );
 
         expect(iSanitizerFactorySpy).toHaveBeenCalled();
         expect(mSanitizerFactorySpy).not.toHaveBeenCalled();
@@ -219,7 +246,11 @@ describe('ComponentFactory', () => {
           providers: [{provide: RendererFactory2, useValue: rendererFactorySpy}],
         });
         (cf as any).ngModule = {
-          injector: Injector.create({providers: [THROWING_RENDERER_FACTOR2_PROVIDER]}),
+          // TODO: Not injecting right?
+          injector: createEnvironmentInjector(
+            [THROWING_RENDERER_FACTOR2_PROVIDER],
+            TestBed.inject(EnvironmentInjector),
+          ),
         };
 
         cf.create(injector);
@@ -235,7 +266,12 @@ describe('ComponentFactory', () => {
           }),
         };
 
-        cf.create(injector);
+        cf.create(
+          injector,
+          /* projectableNodes */ undefined,
+          /* rootSelectorOrNode */ undefined,
+          /* environmentInjector */ TestBed.inject(EnvironmentInjector),
+        );
 
         expect(rendererFactorySpy.wasCalled).toBeTrue();
       });
@@ -260,7 +296,12 @@ describe('ComponentFactory', () => {
           }),
         };
 
-        cf.create(injector);
+        cf.create(
+          injector,
+          /* projectableNodes */ undefined,
+          /* rootSelectorOrNode */ undefined,
+          /* environmentInjector */ TestBed.inject(EnvironmentInjector),
+        );
 
         expect(iSanitizerFactorySpy).toHaveBeenCalled();
         expect(mSanitizerFactorySpy).not.toHaveBeenCalled();
@@ -281,7 +322,12 @@ describe('ComponentFactory', () => {
           }),
         };
 
-        cf.create(injector);
+        cf.create(
+          injector,
+          /* projectableNodes */ undefined,
+          /* rootSelectorOrNode */ undefined,
+          /* environmentInjector */ TestBed.inject(EnvironmentInjector),
+        );
 
         expect(mSanitizerFactorySpy).toHaveBeenCalled();
       });
@@ -307,7 +353,12 @@ describe('ComponentFactory', () => {
       });
 
       const hostNode = document.createElement('div');
-      const componentRef = cf.create(injector, undefined, hostNode);
+      const componentRef = cf.create(
+        injector,
+        /* projectableNodes */ undefined,
+        /* rootSelectorOrNode */ hostNode,
+        /* environmentInjector */ TestBed.inject(EnvironmentInjector),
+      );
       expect(hostNode.className).toEqual('HOST_COMPONENT HOST_RENDERER');
     });
   });
