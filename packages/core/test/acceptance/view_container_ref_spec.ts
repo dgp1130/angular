@@ -50,7 +50,7 @@ import {
   ɵsetDocument,
 } from '../../src/core';
 import {ComponentFixture, TestBed, TestComponentRenderer} from '../../testing';
-import {SharedStylesHost} from '@angular/platform-browser/src/dom/shared_styles_host';
+import {ɵSharedStylesHost as SharedStylesHost} from '@angular/platform-browser';
 
 describe('ViewContainerRef', () => {
   /**
@@ -1412,7 +1412,8 @@ describe('ViewContainerRef', () => {
           {provide: ErrorHandler, useValue: TestBed.inject(ErrorHandler)},
           {provide: RendererFactory2, useValue: TestBed.inject(RendererFactory2)},
           {provide: ANIMATION_QUEUE, useValue: TestBed.inject(ANIMATION_QUEUE)},
-          {provide: SHARED_STYLES_HOST, useExisting: SharedStylesHost},
+          {provide: SHARED_STYLES_HOST, useValue: TestBed.inject(SHARED_STYLES_HOST)},
+          {provide: DOCUMENT, useValue: TestBed.inject(DOCUMENT)},
         ],
       })
       class MyAppModule {}

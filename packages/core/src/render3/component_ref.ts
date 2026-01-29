@@ -570,6 +570,9 @@ export class ComponentRef<T> extends AbstractComponentRef<T> {
   }
 
   override destroy(): void {
+    if (this.hostView.destroyed) {
+      return;
+    }
     this.hostView.destroy();
   }
 

@@ -204,6 +204,7 @@ export class SharedStylesHost implements OnDestroy {
     for (const [, {elements}] of [...this.inline, ...this.external]) {
       removeElements(elements);
     }
+    // TODO: Seems to be getting called too early? Why is the timing changing at all?
     this.hosts.clear();
   }
 
