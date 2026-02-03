@@ -24,6 +24,7 @@ import {RuntimeError, RuntimeErrorCode} from '../errors';
 
 import {PlatformRef} from './platform_ref';
 import {PLATFORM_DESTROY_LISTENERS} from './platform_destroy_listeners';
+import {registerAllTools} from '../render3/ai_tools';
 
 let _platformInjector: Injector | null = null;
 
@@ -43,6 +44,7 @@ export function createPlatform(injector: Injector): PlatformRef {
 
   publishDefaultGlobalUtils();
   publishSignalConfiguration();
+  if (typeof ngDevMode !== 'undefined' && ngDevMode) registerAllTools();
 
   // During SSR, using this setting and using an injector from the global can cause the
   // injector to be used for a different requjest due to concurrency.
@@ -165,6 +167,7 @@ export function createOrReusePlatformInjector(providers: StaticProvider[] = []):
   if (_platformInjector) return _platformInjector;
 
   publishDefaultGlobalUtils();
+  if (typeof ngDevMode !== 'undefined' && ngDevMode) registerAllTools();
 
   // Otherwise, setup a new platform injector and run platform initializers.
   const injector = createPlatformInjector(providers);
