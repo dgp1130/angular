@@ -7,11 +7,27 @@
  */
 
 /// <reference types="chrome"/>
-const theme = chrome.devtools.panels.themeName;
-chrome.devtools.panels.create(
-  'Angular',
-  // Firefox specifically displays the icon in the tab.
-  // the bw icon wasn't visible in dark mode
-  theme === 'dark' ? 'assets/icon16.png' : 'assets/icon-bw16.png',
-  'index.html',
-);
+
+isGoogler().then((isGoogler) => {
+  const theme = chrome.devtools.panels.themeName;
+  chrome.devtools.panels.create(
+    isGoogler ? 'Angular & Wiz' : 'Angular',
+    // Firefox specifically displays the icon in the tab.
+    // the bw icon wasn't visible in dark mode
+    theme === 'dark' ? 'assets/icon16.png' : 'assets/icon-bw16.png',
+    'index.html',
+  );
+});
+
+async function isGoogler(): Promise<boolean> {
+  try {
+    const response = await fetch(
+      'https://g3doc.corp.google.com/does/not/exist/for/angular/devtools',
+    );
+    console.log(response);
+    return response.ok || (response.status >= 400 && response.status < 500);
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
