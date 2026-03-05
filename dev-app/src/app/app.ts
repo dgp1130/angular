@@ -1,12 +1,13 @@
 import {Component, inject, signal} from '@angular/core';
 import {Counter} from './counter';
 import {AuthenticatedUser} from './authenticated-user';
+import {ViewUser} from './view-user';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.css',
-  imports: [Counter],
+  imports: [Counter, ViewUser],
 })
 export class App {
   protected readonly user = inject(AuthenticatedUser);
