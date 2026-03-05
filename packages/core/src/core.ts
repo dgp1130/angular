@@ -132,6 +132,9 @@ export {
   MAX_ANIMATION_TIMEOUT,
 } from './animation/interfaces';
 export {IdleService, provideIdleServiceWith} from './defer/idle_service';
+export {WebMcpRegistry} from './webmcp/webmcp_registry';
+export {WebMcpTool, WebMcpToolResult, WebMcpToolEvent} from './webmcp/webmcp_types';
+export {provideWebMcp, WebMcpToolRepository} from './webmcp/webmcp_providers';
 
 import {global} from './util/global';
 if (typeof ngDevMode !== 'undefined' && ngDevMode) {
