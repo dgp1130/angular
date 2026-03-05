@@ -16,7 +16,7 @@ export class Counter {
   protected readonly count = signal(0);
 
   constructor() {
-    this.webMcp.registerTool({
+    this.webMcp.declareTool({
       name: 'get-count',
       description: 'Get the current count.',
       inputSchema: {type: 'object', properties: {}},
@@ -25,7 +25,7 @@ export class Counter {
       },
     });
 
-    this.webMcp.registerTool({
+    this.webMcp.declareTool({
       name: 'increment',
       description: 'Increment the counter.',
       inputSchema: {type: 'object', properties: {}},

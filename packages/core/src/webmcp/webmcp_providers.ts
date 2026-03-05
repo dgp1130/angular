@@ -16,7 +16,6 @@ import {Type} from '../interface/type';
 import {WebMcpRegistry} from './webmcp_registry';
 import {WebMcpTool} from './webmcp_types';
 
-/** TODO: This is not used yet. */
 export interface WebMcpToolRepository {
   mcpTools: WebMcpTool[];
 }
@@ -31,13 +30,12 @@ export interface WebMcpToolRepository {
  */
 export function provideWebMcp(repositories: Type<WebMcpToolRepository>[]): EnvironmentProviders {
   return makeEnvironmentProviders([
-    repositories,
     provideEnvironmentInitializer(() => {
       const registry = inject(WebMcpRegistry);
       for (const repositoryType of repositories) {
         const repository = inject(repositoryType);
         for (const tool of repository.mcpTools) {
-          registry.registerTool(tool);
+          registry.declareTool(tool);
         }
       }
     }),

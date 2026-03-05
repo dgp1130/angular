@@ -13,6 +13,8 @@ export interface WebMcpToolResult {
   }>;
 }
 
+export type PromiseOr<T> = T | Promise<T>;
+
 export interface WebMcpTool {
   name: string;
   description: string;
@@ -22,7 +24,7 @@ export interface WebMcpTool {
     required?: string[];
   };
   annotations?: Record<string, string>;
-  execute: (args: any) => WebMcpToolResult | Promise<WebMcpToolResult>;
+  execute: (args: any) => PromiseOr<WebMcpToolResult>;
 }
 
 export interface WebMcpModelContext {

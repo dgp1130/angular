@@ -3,7 +3,13 @@ import {Component, inject, input, signal, WebMcpRegistry, WebMcpTool} from '@ang
 const followUserTool: Omit<WebMcpTool, 'execute'> = {
   name: 'follow-user',
   description: 'Follow a user.',
-  inputSchema: {type: 'object', properties: {name: {type: 'string'}}},
+  inputSchema: {type: 'object', properties: {handle: {type: 'string'}}},
+};
+
+const getFollowableUsersTool: Omit<WebMcpTool, 'execute'> = {
+  name: 'get-followable-users',
+  description: 'Get a list of users that can be followed.',
+  inputSchema: {type: 'object', properties: {}},
 };
 
 @Component({
@@ -17,7 +23,7 @@ const followUserTool: Omit<WebMcpTool, 'execute'> = {
       <span style="display: inline-block; width: 8px; height: 8px; margin-right: 4px;"></span>
     }
 
-    <span>{{ name() }}</span>
+    <span>{{ handle() }}</span>
     <button (click)="toggleFollow()">{{ isFollowing() ? 'Unfollow' : 'Follow' }}</button>
   `,
   styles: `
@@ -29,16 +35,31 @@ const followUserTool: Omit<WebMcpTool, 'execute'> = {
 export class ViewUser {
   private readonly mcpRegistry = inject(WebMcpRegistry);
 
-  name = input.required<string>();
+  readonly handle = input.required<string>();
 
   protected readonly isFollowing = signal(false);
 
   constructor() {
-    this.mcpRegistry.declareToolHandler(followUserTool, {
-      condition: (params) => params.name === this.name(),
+    this.mcpRegistry.declareAggregatedToolHandler(getFollowableUsersTool, () => {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `You are ${this.isFollowing() ? 'following' : 'not following'} ${this.handle()}.`,
+          },
+        ],
+      };
+    });
+
+    this.mcpRegistry.declareExclusiveToolHandler(followUserTool, {
+      match: (params) => {
+        if (params.handle === this.handle()) return true;
+
+        return `I support name === '${this.handle()}'`;
+      },
       execute: () => {
         this.isFollowing.set(true);
-        return {content: [{type: 'text', text: `Followed ${this.name()}.`}]};
+        return {content: [{type: 'text', text: `Followed ${this.handle()}.`}]};
       },
     });
   }
