@@ -1,3 +1,7 @@
-<h1>Welcome to the dev app!</h1>
+<div>Username: {{ user.name() }}</div>
 
-<router-outlet />
+<button (click)="toggle()">Toggle Counter</button>
+
+@if (showCounter()) {
+  <app-counter />
+}

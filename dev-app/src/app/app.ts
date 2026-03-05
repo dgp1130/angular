@@ -1,12 +1,19 @@
-import {Component, signal} from '@angular/core';
-import {RouterOutlet} from '@angular/router';
+import {Component, inject, signal} from '@angular/core';
+import {Counter} from './counter';
+import {AuthenticatedUser} from './authenticated-user';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
+  imports: [Counter],
 })
 export class App {
-  protected readonly title = signal('dev-app');
+  protected readonly user = inject(AuthenticatedUser);
+
+  protected readonly showCounter = signal(true);
+
+  protected toggle(): void {
+    this.showCounter.update((s) => !s);
+  }
 }
