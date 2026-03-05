@@ -9,6 +9,7 @@
 import {
   EnvironmentProviders,
   inject,
+  InjectionToken,
   makeEnvironmentProviders,
   provideEnvironmentInitializer,
 } from '../di';
@@ -17,23 +18,25 @@ import {WebMcpRegistry} from './webmcp_registry';
 import {WebMcpTool} from './webmcp_types';
 
 export interface WebMcpToolRepository {
-  mcpTools: WebMcpTool[];
+  readonly mcpTools: WebMcpTool[];
 }
 
 /**
  * Configure WebMCP Tools for the application.
  *
- * It will collect all implementations of `WebMcpTool` and eagerly register them
- * into the `WebMcpRegistry` when the application finishes bootstrapping.
+ * It will collect all implementations of {@link WebMcpToolRepository} and eagerly register them into the
+ * {@link WebMcpRegistry} when the application finishes bootstrapping.
  *
- * @param repositories A list of providers or types implementing `WebMcpTool` to be registered.
+ * @param repositories A list of injection tokens implementing {@link WebMcpToolRepository} to be registered.
  */
-export function provideWebMcp(repositories: Type<WebMcpToolRepository>[]): EnvironmentProviders {
+export function provideWebMcp(
+  repositories: Array<Type<WebMcpToolRepository> | InjectionToken<WebMcpToolRepository>>,
+): EnvironmentProviders {
   return makeEnvironmentProviders([
     provideEnvironmentInitializer(() => {
       const registry = inject(WebMcpRegistry);
-      for (const repositoryType of repositories) {
-        const repository = inject(repositoryType);
+      for (const repositoryToken of repositories) {
+        const repository = inject(repositoryToken);
         for (const tool of repository.mcpTools) {
           registry.declareTool(tool);
         }
