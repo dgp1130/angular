@@ -31,7 +31,7 @@ export interface FormSubmitOptions<TRootModel, TSubmittedModel> {
    * @param detail An object containing the root field of the submitted form as well as the
    *   submitted field itself
    */
-  action: (
+  action?: (
     field: FieldTree<TRootModel & TSubmittedModel>,
     detail: {root: FieldTree<TRootModel>; submitted: FieldTree<TSubmittedModel>},
   ) => Promise<TreeValidationResult>;

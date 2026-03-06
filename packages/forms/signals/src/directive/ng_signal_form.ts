@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
-import {Directive, input} from '@angular/core';
+import {Directive, ElementRef, inject, input} from '@angular/core';
 
 import {submit} from '../api/structure';
 import {FieldTree} from '../api/types';
@@ -38,14 +38,17 @@ import {FieldTree} from '../api/types';
   },
 })
 export class FormRoot<T> {
+  private readonly form = inject(ElementRef);
   readonly fieldTree = input.required<FieldTree<T>>({alias: 'formRoot'});
 
   protected onSubmit(event: SubmitEvent): void {
     event.preventDefault();
-    event.respondWith!(
-      submit(this.fieldTree()).then((success) => {
-        return success ? 'Success!' : `Failure.`;
-      }),
-    );
+    if (event.agentInvoked) {
+      for (const field of this.form.nativeElement.querySelectorAll('input, select, textarea')) {
+        field.dispatchEvent(new CustomEvent('input'));
+      }
+    }
+
+    submit(this.fieldTree(), {event});
   }
 }

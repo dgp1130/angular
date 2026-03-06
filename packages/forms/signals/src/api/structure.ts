@@ -393,8 +393,15 @@ export function submit<TModel>(
   const opts =
     typeof options === 'function'
       ? {action: options}
-      : ((options as FormSubmitOptions<unknown, TModel>) ??
-        node.structure.fieldManager.submitOptions);
+      : ({...node.structure.fieldManager.submitOptions, ...(options ?? {})} as FormSubmitOptions<
+          unknown,
+          TModel
+        >);
+
+  if (node.errorSummary().length > 0) {
+    opts?.event?.respondWith?.(Promise.resolve('Failure: Form has validation errors.'));
+    return Promise.resolve(false);
+  }
   const promise = submitImpl(form, node, opts).then((errors) => ({
     errors,
     success: !errors || (isArray(errors) && errors.length === 0),
