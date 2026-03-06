@@ -1,17 +1,11 @@
 import {Component, inject, signal} from '@angular/core';
-import {ReactiveFormsModule} from '@angular/forms';
-import {form, FormField, required, submit} from '@angular/forms/signals';
+import {form, FormField, required, submit, FormRoot} from '@angular/forms/signals';
 import {AuthenticatedUser} from './authenticated-user';
-
-export interface WebMcpSubmitEvent extends SubmitEvent {
-  agentInvoked?: boolean;
-  respondWith?: (promise: Promise<any>) => void;
-}
 
 @Component({
   selector: 'app-update-user-form',
   standalone: true,
-  imports: [ReactiveFormsModule, FormField],
+  imports: [FormField, FormRoot],
   template: `
     <form
       toolname="set-user-name"
@@ -59,20 +53,33 @@ export class UpdateUserForm {
     required(schemaPath.userName, {message: 'Username is required.'});
   });
 
-  onSubmit(event: WebMcpSubmitEvent) {
+  onSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    event.respondWith!(
-      submit(this.form, async () => {
+    submit(this.form, {
+      action: async () => {
         const newName = this.form().value().userName;
-        if (newName) {
-          this.user.name.set(newName);
-          return undefined;
-        } else {
-          // [{fieldTree: this.form.userName, kind: 'custom', message: 'Name cannot be empty'}];
-          throw new Error('Name cannot be empty');
+        // TODO: Should this happen at all?
+        if (!newName) {
+          return [
+            {fieldTree: this.form.userName, kind: 'custom', message: 'Name cannot be empty.'},
+          ];
         }
-      }).then((success) => (success ? 'Success!' : 'Failure.')),
-    );
+
+        if (newName === 'marktechson') {
+          return [
+            {
+              fieldTree: this.form.userName,
+              kind: 'custom',
+              message: 'Username `marktechson` is already taken.',
+            },
+          ];
+        }
+
+        this.user.name.set(newName);
+        return undefined;
+      },
+      event, // Can we get this automatically? What if `submit` is called asynchronously?
+    });
   }
 }

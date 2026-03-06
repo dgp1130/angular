@@ -24,7 +24,7 @@ import {FieldPathNode} from '../schema/path_node';
 import {assertPathIsCurrent, SchemaImpl} from '../schema/schema';
 import {normalizeFormArgs} from '../util/normalize_form_args';
 import {isArray} from '../util/type_guards';
-import type {ValidationError} from './rules';
+import type {ValidationError, WithOptionalFieldTree} from './rules';
 import type {
   FieldState,
   FieldTree,
@@ -37,6 +37,7 @@ import type {
   SchemaFn,
   SchemaOrSchemaFn,
   SchemaPath,
+  TreeValidationResult,
 } from './types';
 
 /**
@@ -383,20 +384,41 @@ export async function submit<TModel>(
   form: FieldTree<TModel>,
   action: NoInfer<FormSubmitOptions<unknown, TModel>['action']>,
 ): Promise<boolean>;
-export async function submit<TModel>(
+export function submit<TModel>(
   form: FieldTree<TModel>,
   options?: FormSubmitOptions<unknown, TModel> | FormSubmitOptions<unknown, TModel>['action'],
 ): Promise<boolean> {
-  const node = untracked(form) as FieldState<unknown> as FieldNode;
-
-  const field = options === undefined ? node.structure.root.fieldProxy : form;
-  const detail = {root: node.structure.root.fieldProxy, submitted: form};
-
   // Normalize options.
-  options =
+  const node = untracked(form) as FieldState<unknown> as FieldNode;
+  const opts =
     typeof options === 'function'
       ? {action: options}
-      : (options ?? node.structure.fieldManager.submitOptions);
+      : ((options as FormSubmitOptions<unknown, TModel>) ??
+        node.structure.fieldManager.submitOptions);
+  const promise = submitImpl(form, node, opts).then((errors) => ({
+    errors,
+    success: !errors || (isArray(errors) && errors.length === 0),
+  }));
+
+  opts?.event?.respondWith?.(
+    promise.then(({success, errors}) => {
+      if (success) return 'Success!';
+
+      const errorSummary = Array.isArray(errors) ? errors : [errors];
+      return `Failure: ${errorSummary.map((error) => error.message).join('\n')}`;
+    }),
+  );
+
+  return promise.then(({success}) => success);
+}
+
+async function submitImpl<TModel>(
+  form: FieldTree<TModel>,
+  node: FieldNode,
+  options: FormSubmitOptions<unknown, TModel>,
+): Promise<TreeValidationResult<ValidationError.WithOptionalFieldTree>> {
+  const field = options === undefined ? node.structure.root.fieldProxy : form;
+  const detail = {root: node.structure.root.fieldProxy, submitted: form};
 
   // Verify that an action was provided.
   const action = options?.action as FormSubmitOptions<unknown, unknown>['action'];
@@ -429,11 +451,11 @@ export async function submit<TModel>(
       node.submitState.selfSubmitting.set(true);
       const errors = await untracked(() => action?.(field, detail));
       errors && setSubmissionErrors(node, errors);
-      return !errors || (isArray(errors) && errors.length === 0);
+      return errors;
     } else {
       untracked(() => onInvalid?.(field, detail));
     }
-    return false;
+    return node.errorSummary();
   } finally {
     node.submitState.selfSubmitting.set(false);
   }

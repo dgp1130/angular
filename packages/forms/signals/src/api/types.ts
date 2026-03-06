@@ -55,6 +55,8 @@ export interface FormSubmitOptions<TRootModel, TSubmittedModel> {
    * - 'ignore': Will always submit regardless of invalid or pending validators
    */
   ignoreValidators?: 'pending' | 'none' | 'all';
+
+  event?: SubmitEvent;
 }
 
 /**
