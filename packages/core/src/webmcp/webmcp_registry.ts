@@ -213,6 +213,7 @@ export class WebMcpRegistry {
         for (const handler of handlers) {
           const match = await handler.match(args);
           if (match === true) {
+            // TODO: Automatic parameter validation?
             return handler.execute(args);
           } else {
             failedMatches.push(match);

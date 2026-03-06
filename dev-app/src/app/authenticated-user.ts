@@ -23,14 +23,5 @@ export class AuthenticatedUser implements WebMcpToolRepository {
         return {content: [{type: 'text', text: this.name()}]};
       },
     },
-    {
-      name: 'set-user-name',
-      description: 'Set the value of the user name.',
-      inputSchema: {type: 'object', properties: {value: {type: 'string'}}},
-      execute: ({value}: {value: string}) => {
-        this.name.set(value);
-        return {content: [{type: 'text', text: `Set user name to ${value}.`}]};
-      },
-    },
   ];
 }

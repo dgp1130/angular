@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.dev/license
  */
 
+import {ApplicationRef} from '../application/application_ref';
 import {
   EnvironmentProviders,
   inject,
@@ -15,7 +16,7 @@ import {
 } from '../di';
 import {Type} from '../interface/type';
 import {WebMcpRegistry} from './webmcp_registry';
-import {WebMcpTool} from './webmcp_types';
+import {WebMcpTool, WebMcpToolEvent} from './webmcp_types';
 
 export interface WebMcpToolRepository {
   readonly mcpTools: WebMcpTool[];
@@ -40,6 +41,27 @@ export function provideWebMcp(
         for (const tool of repository.mcpTools) {
           registry.declareTool(tool);
         }
+      }
+
+      if (typeof window !== 'undefined') {
+        // TODO: Do this through the framework?
+        const updateFormFromToolCall = (evt: WebMcpToolEvent) => {
+          const form = document.querySelector(`form[toolname="${evt.toolName}"]`);
+          if (!form) {
+            console.error(`Failed to find form for tool: ${evt.toolName}`);
+            return;
+          }
+
+          for (const field of form.querySelectorAll('input, select, textarea')) {
+            field.dispatchEvent(new CustomEvent('input'));
+          }
+        };
+
+        window.addEventListener('toolactivated', updateFormFromToolCall);
+        const appRef = inject(ApplicationRef);
+        appRef.onDestroy(() => {
+          window.removeEventListener('toolactivated', updateFormFromToolCall);
+        });
       }
     }),
   ]);
