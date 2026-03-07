@@ -43,7 +43,6 @@ import {
   type NativeFormControl,
 } from './native';
 import {FORM_FIELD_PARSE_ERRORS} from './parse_errors';
-import {FormTool} from '../..';
 
 export const ɵNgFieldDirective: unique symbol = Symbol();
 
@@ -100,15 +99,6 @@ export const FORM_FIELD = new InjectionToken<FormField<unknown>>(
 })
 export class FormField<T> {
   readonly field = input.required<Field<T>>({alias: 'formField'});
-
-  // private readonly formTool = inject(FormTool);
-  constructor() {
-    // this.formTool.registerFormField(this as any);
-  }
-
-  ngOnDestroy() {
-    // this.formTool.unregisterFormField(this as any);
-  }
 
   /** @internal */
   readonly renderer = inject(Renderer2);

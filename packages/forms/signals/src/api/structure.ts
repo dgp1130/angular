@@ -415,14 +415,14 @@ export function submit<TModel>(
     success: !errors || (isArray(errors) && errors.length === 0),
   }));
 
-  opts?.event?.respondWith?.(
-    promise.then(({success, errors}) => {
-      if (success) return 'Success!';
+  // opts?.event?.respondWith?.(
+  //   promise.then(({success, errors}) => {
+  //     if (success) return 'Success!';
 
-      const errorSummary = Array.isArray(errors) ? errors : [errors];
-      return `Failure: ${errorSummary.map((error) => error.message).join('\n')}`;
-    }),
-  );
+  //     const errorSummary = Array.isArray(errors) ? errors : [errors];
+  //     return `Failure: ${errorSummary.map((error) => error.message).join('\n')}`;
+  //   }),
+  // );
 
   return promise.then(({success}) => success);
 }

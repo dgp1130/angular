@@ -1,18 +1,10 @@
 import {Component, signal} from '@angular/core';
-import {
-  form,
-  FormField,
-  required,
-  submit,
-  FormRoot,
-  FormTool,
-  TreeValidationResult,
-} from '@angular/forms/signals';
+import {form, FormField, required, FormRoot, TreeValidationResult} from '@angular/forms/signals';
 
 @Component({
   selector: 'app-update-user-form',
   standalone: true,
-  imports: [FormField, FormRoot, FormTool],
+  imports: [FormField, FormRoot],
   template: `
     <form
       [formRoot]="form"
@@ -44,7 +36,7 @@ import {
     </form>
   `,
   styles: `
-    ç form:tool-form-active {
+    form:tool-form-active {
       outline: cyan dashed 2px;
     }
   `,
