@@ -398,10 +398,18 @@ export function submit<TModel>(
           TModel
         >);
 
-  if (node.errorSummary().length > 0) {
-    opts?.event?.respondWith?.(Promise.resolve('Failure: Form has validation errors.'));
+  if (node.invalid()) {
+    opts?.event?.respondWith?.(
+      Promise.resolve(
+        `Failure: ${node
+          .errorSummary()
+          .map((error) => error.message)
+          .join('\n')}`,
+      ),
+    );
     return Promise.resolve(false);
   }
+
   const promise = submitImpl(form, node, opts).then((errors) => ({
     errors,
     success: !errors || (isArray(errors) && errors.length === 0),
@@ -462,7 +470,7 @@ async function submitImpl<TModel>(
     } else {
       untracked(() => onInvalid?.(field, detail));
     }
-    return node.errorSummary();
+    return [];
   } finally {
     node.submitState.selfSubmitting.set(false);
   }

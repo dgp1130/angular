@@ -1,4 +1,4 @@
-import {Component, inject, signal} from '@angular/core';
+import {Component, signal} from '@angular/core';
 import {
   form,
   FormField,
@@ -8,7 +8,6 @@ import {
   FormTool,
   TreeValidationResult,
 } from '@angular/forms/signals';
-import {AuthenticatedUser} from './authenticated-user';
 
 @Component({
   selector: 'app-update-user-form',
@@ -17,91 +16,72 @@ import {AuthenticatedUser} from './authenticated-user';
   template: `
     <form
       [formRoot]="form"
-      toolname="set-user-name"
-      tooldescription="Set the value of the user name."
+      toolname="set-name"
+      tooldescription="Set the user's first name."
       toolautosubmit
       novalidate
     >
       <div>
-        <label for="usernameInput">New Username</label>
+        <div>First name: {{ firstName() }}</div>
+        <label for="firstname">New first name: </label>
         <input
           type="text"
-          id="usernameInput"
-          [formField]="form.userName"
-          toolparamdescription="The new username to set"
+          id="firstname"
+          [formField]="form.firstName"
+          toolparamdescription="The new first name to set"
         />
 
-        <label for="passwordInput">Password</label>
-        <input
-          type="password"
-          id="passwordInput"
-          [formField]="form.password"
-          toolparamdescription="The new password to set"
-        />
-        @if (form.userName().invalid()) {
+        @if (form.firstName().invalid()) {
           <ul>
-            @for (error of form.userName().errors(); track error) {
+            @for (error of form.firstName().errors(); track error) {
               <li>{{ error.message }}</li>
             }
           </ul>
         }
       </div>
 
-      {{ form().value().userName }}
-      {{ form().value().password }}
-
       <button type="submit">Update</button>
     </form>
   `,
   styles: `
-    form {
-      border: 1px solid #ccc;
-      padding: 16px;
-      margin-top: 16px;
-      border-radius: 4px;
-    }
-    form:tool-form-active {
+    ç form:tool-form-active {
       outline: cyan dashed 2px;
     }
   `,
 })
 export class UpdateUserForm {
-  protected readonly user = inject(AuthenticatedUser);
+  protected readonly firstName = signal('Doug');
 
   protected readonly form = form(
-    signal({userName: this.user.name(), password: ''}),
+    signal({firstName: this.firstName()}),
     (schemaPath) => {
-      required(schemaPath.userName, {message: 'Username is required.'});
+      required(schemaPath.firstName, {message: 'Username is required.'});
     },
     {
       submission: {
         action: async (): Promise<TreeValidationResult> => {
-          const newName = this.form().value().userName;
+          const newName = this.form().value().firstName;
           // TODO: Should this happen at all?
           if (!newName) {
             return [
-              {fieldTree: this.form.userName, kind: 'custom', message: 'Name cannot be empty.'},
+              {fieldTree: this.form.firstName, kind: 'custom', message: 'Name cannot be empty.'},
             ];
           }
 
-          if (newName === 'marktechson') {
+          if (newName === 'Mark') {
             return [
               {
-                fieldTree: this.form.userName,
+                fieldTree: this.form.firstName,
                 kind: 'custom',
-                message: 'Username `marktechson` is already taken.',
+                message: `Sorry, there's only one Mark Techson, and you're not cool enough to be him.`,
               },
             ];
           }
 
-          this.user.name.set(newName);
+          this.firstName.set(newName);
           return undefined;
         },
       },
     },
   );
-
-  private onSubmit() {
-    const success = submit(this.form);
-  }
 }

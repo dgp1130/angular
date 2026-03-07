@@ -15,20 +15,32 @@ const getFollowableUsersTool: Omit<WebMcpTool, 'execute'> = {
 @Component({
   selector: 'app-view-user',
   template: `
-    @if (isFollowing()) {
-      <span
-        style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: blue; margin-right: 4px;"
-      ></span>
-    } @else {
-      <span style="display: inline-block; width: 8px; height: 8px; margin-right: 4px;"></span>
-    }
-
-    <span>{{ handle() }}</span>
-    <button (click)="toggleFollow()">{{ isFollowing() ? 'Unfollow' : 'Follow' }}</button>
+    <button
+      (click)="toggleFollow()"
+      [attr.following]="isFollowing()"
+      [title]="isFollowing() ? 'Unfollow' : 'Follow'"
+    ></button>
+    <span class="handle">{{ handle() }}</span>
   `,
   styles: `
     button {
-      margin-left: 4px;
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      padding: 0;
+      border: none;
+    }
+    button[following='true'] {
+      background-color: blue;
+    }
+    button[following='false'] {
+      background-color: red;
+    }
+
+    .handle {
+      font-family: 'Courier New', monospace, sans-serif;
     }
   `,
 })

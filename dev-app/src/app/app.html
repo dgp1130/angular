@@ -1,20 +1,35 @@
-<div>Username: {{ user.name() }}</div>
-<app-update-user-form />
+<h1>Angular WebMCP</h1>
 
-<button (click)="toggle()">Toggle Counter</button>
+<div class="box">
+  <h2>Global State</h2>
+  <app-global-username />
+</div>
 
-@if (showCounter()) {
-  <app-counter />
-}
+<div class="box">
+  <h2>Counter</h2>
+  <button (click)="toggle()">Toggle Counter</button>
+  @if (showCounter()) {
+    <app-counter />
+  }
+</div>
 
-<ul>
-  <li>
-    <app-view-user handle="@marktechson" />
-  </li>
-  <li>
-    <app-view-user handle="@punderwoman" />
-  </li>
-  <li>
-    <app-view-user handle="@synalx" />
-  </li>
-</ul>
+<div class="box">
+  <h2>Multiple Components</h2>
+  <div>Users to follow:</div>
+  <ul>
+    <li>
+      <app-view-user handle="@marktechson" />
+    </li>
+    <li>
+      <app-view-user handle="@punderwoman" />
+    </li>
+    <li>
+      <app-view-user handle="@synalx" />
+    </li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Signal Forms</h2>
+  <app-update-user-form />
+</div>

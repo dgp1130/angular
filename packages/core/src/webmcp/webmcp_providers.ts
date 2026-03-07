@@ -42,27 +42,6 @@ export function provideWebMcp(
           registry.declareTool(tool);
         }
       }
-
-      if (typeof window !== 'undefined') {
-        // TODO: Do this through the framework?
-        const updateFormFromToolCall = (evt: WebMcpToolEvent) => {
-          const form = document.querySelector(`form[toolname="${evt.toolName}"]`);
-          if (!form) {
-            console.error(`Failed to find form for tool: ${evt.toolName}`);
-            return;
-          }
-
-          for (const field of form.querySelectorAll('input, select, textarea')) {
-            field.dispatchEvent(new CustomEvent('input'));
-          }
-        };
-
-        window.addEventListener('toolactivated', updateFormFromToolCall);
-        const appRef = inject(ApplicationRef);
-        appRef.onDestroy(() => {
-          window.removeEventListener('toolactivated', updateFormFromToolCall);
-        });
-      }
     }),
   ]);
 }
