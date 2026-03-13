@@ -7,6 +7,7 @@
  */
 
 import {PathKind, SchemaPath, SchemaPathRules} from '../../types';
+import {metadata, PARAMETER} from '../metadata';
 import {BaseValidatorConfig, getOption, isEmpty} from './util';
 import {validate} from './validate';
 import {emailError} from './validation_errors';
@@ -76,4 +77,6 @@ export function email<TPathKind extends PathKind = PathKind.Root>(
 
     return undefined;
   });
+
+  metadata(path, PARAMETER, () => ({type: 'email'}));
 }

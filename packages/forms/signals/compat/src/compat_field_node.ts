@@ -23,9 +23,9 @@ import type {CompatFieldNodeOptions} from './compat_structure';
 export class CompatFieldNode extends FieldNode {
   readonly control: Signal<AbstractControl>;
 
-  constructor(public readonly options: CompatFieldNodeOptions) {
-    super(options);
-    this.control = this.options.control;
+  constructor(public readonly compatOptions: CompatFieldNodeOptions) {
+    super(compatOptions);
+    this.control = this.compatOptions.control;
   }
 }
 

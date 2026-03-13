@@ -24,6 +24,7 @@ import {FieldPathNode} from '../schema/path_node';
 import {assertPathIsCurrent, SchemaImpl} from '../schema/schema';
 import {normalizeFormArgs} from '../util/normalize_form_args';
 import {isArray} from '../util/type_guards';
+import {registerFormAsTool} from '../webmcp/webmcp';
 import type {ValidationError, WithOptionalFieldTree} from './rules';
 import type {
   FieldState,
@@ -46,6 +47,25 @@ import type {
  * @category structure
  * @experimental 21.0.0
  */
+/**
+ * Options for exposing a form as a WebMCP tool.
+ *
+ * @experimental 21.1.0
+ */
+export interface FormToolOptions {
+  /** The semantic name of the tool for the AI agent. */
+  name: string;
+
+  /** A description explaining the purpose of the tool to the AI agent. */
+  description: string;
+
+  /**
+   * Whether to allow the AI to trigger the form's submit function immediately
+   * without a separate explicit turn.
+   */
+  allowAutoSubmit?: boolean;
+}
+
 export interface FormOptions<TModel> {
   /**
    * The injector to use for dependency injection. If this is not provided, the injector for the
@@ -55,7 +75,11 @@ export interface FormOptions<TModel> {
   /** The name of the root form, used in generating name attributes for the fields. */
   name?: string;
   /** Options that define how to handle form submission. */
-  submission?: FormSubmitOptions<TModel, unknown>;
+  submission?: FormSubmitOptions<unknown, TModel> | FormSubmitOptions<unknown, TModel>['action'];
+  /** An optional field adapter to use. */
+  adapter?: FieldAdapter;
+  /** Options for exposing this form as a WebMCP tool. */
+  tool?: FormToolOptions;
 }
 
 /**
@@ -197,6 +221,19 @@ export function form<TModel>(...args: any[]): FieldTree<TModel> {
   const adapter = options?.adapter ?? new BasicFieldAdapter();
   const fieldRoot = FieldNode.newRoot(fieldManager, model, pathNode, adapter);
   fieldManager.createFieldManagementEffect(fieldRoot.structure);
+
+  if (options?.tool) {
+    registerFormAsTool(
+      injector,
+      fieldRoot.fieldTree as FieldTree<TModel>,
+      model,
+      pathNode,
+      options.tool.name,
+      options.tool.description,
+      options.tool.allowAutoSubmit,
+      submit,
+    );
+  }
 
   return fieldRoot.fieldTree as FieldTree<TModel>;
 }

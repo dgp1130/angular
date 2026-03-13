@@ -12,6 +12,74 @@ import {assertPathIsCurrent} from '../../schema/schema';
 import type {LogicFn, PathKind, SchemaPath, SchemaPathRules} from '../types';
 
 /**
+ * Options for the {@link parameter} rule.
+ *
+ * @experimental 21.1.0
+ */
+export interface ParameterOptions<TValue> {
+  /**
+   * The semantic name of the field for the AI agent.
+   * If not provided, the property name will be used.
+   */
+  name?: string;
+
+  /**
+   * A description explaining the purpose of the parameter to the AI agent.
+   */
+  description?: string;
+
+  /**
+   * An explicit type to override the inferred one for the AI agent.
+   */
+  type?: string;
+}
+
+/**
+ * An option for a field that has a set of allowed values.
+ *
+ * @experimental 21.1.0
+ */
+export interface Option<TValue> {
+  /**
+   * The actual value used in the data model.
+   */
+  value: TValue;
+
+  /**
+   * A human-readable label for the option.
+   * If not provided, the value will be used as the label.
+   */
+  label?: string;
+
+  /**
+   * A description explaining the purpose of the option.
+   */
+  description?: string;
+}
+
+/**
+ * An option with guaranteed label metadata, used by the `FieldState`.
+ *
+ * @experimental 21.1.0
+ */
+export interface OptionWithMetadata<TValue> {
+  /**
+   * The actual value used in the data model.
+   */
+  value: TValue;
+
+  /**
+   * A human-readable label for the option.
+   */
+  label: string;
+
+  /**
+   * A description explaining the purpose of the option.
+   */
+  description?: string;
+}
+
+/**
  * Sets a value for the {@link MetadataKey} for this field.
  *
  * This value is combined via a reduce operation defined by the particular key,
@@ -300,3 +368,41 @@ export const PATTERN: MetadataKey<
   RegExp | undefined,
   RegExp[]
 > = createMetadataKey(MetadataReducer.list<RegExp>());
+
+/**
+ * A {@link MetadataKey} representing the parameter metadata for the AI agent.
+ *
+ * @experimental 21.1.0
+ */
+export const PARAMETER: MetadataKey<
+  Signal<ParameterOptions<unknown> | undefined>,
+  ParameterOptions<unknown>,
+  ParameterOptions<unknown> | undefined
+> = createMetadataKey(MetadataReducer.override());
+
+/**
+ * Annotates a field with semantic metadata for the AI agent.
+ *
+ * @param path The target path to set the parameter metadata for.
+ * @param options The parameter options or a description string.
+ *
+ * @experimental 21.1.0
+ */
+export function parameter<TValue, TPathKind extends PathKind = PathKind.Root>(
+  path: SchemaPath<TValue, SchemaPathRules.Supported, TPathKind>,
+  options: ParameterOptions<TValue> | string,
+): void {
+  const opts = typeof options === 'string' ? {description: options} : options;
+  metadata(path, PARAMETER, () => opts);
+}
+
+/**
+ * A {@link MetadataKey} representing the set of allowed options for the field.
+ *
+ * @experimental 21.1.0
+ */
+export const OPTIONS: MetadataKey<
+  Signal<readonly OptionWithMetadata<any>[]>,
+  readonly OptionWithMetadata<any>[],
+  readonly OptionWithMetadata<any>[]
+> = createMetadataKey(MetadataReducer.override(() => [] as readonly OptionWithMetadata<any>[]));

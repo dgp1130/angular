@@ -10,7 +10,7 @@ import {Signal, WritableSignal} from '@angular/core';
 import {AbstractControl} from '@angular/forms';
 import type {FormField} from '../directive/form_field_directive';
 import type {MetadataKey, ValidationError} from './rules';
-
+import {type OptionWithMetadata} from './rules/metadata';
 /**
  * Symbol used to retain generic type information when it would otherwise be lost.
  */
@@ -430,6 +430,11 @@ export interface FieldState<TValue, TKey extends string | number = string | numb
    * Sets the dirty status of the field to `true`.
    */
   markAsDirty(): void;
+
+  /**
+   * The list of allowed options for this field, if any.
+   */
+  readonly options: Signal<readonly OptionWithMetadata<TValue>[]>;
 
   /**
    * Sets the touched status of the field to `true`.

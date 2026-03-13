@@ -13,6 +13,8 @@ import {
   type MetadataKey,
   MIN,
   MIN_LENGTH,
+  OPTIONS,
+  type OptionWithMetadata,
   PATTERN,
   REQUIRED,
 } from '../api/rules/metadata';
@@ -37,6 +39,9 @@ import {
 } from './structure';
 import {FieldSubmitState} from './submit';
 import {ValidationState} from './validation';
+
+const EMPTY = computed(() => []);
+const FALSE = computed(() => false);
 
 /**
  * Internal node in the form tree for a given field.
@@ -230,6 +235,10 @@ export class FieldNode implements FieldState<unknown> {
     return this.metadata(REQUIRED) ?? FALSE;
   }
 
+  get options(): Signal<readonly OptionWithMetadata<unknown>[]> {
+    return this.metadata(OPTIONS) ?? EMPTY;
+  }
+
   metadata<M>(key: MetadataKey<M, any, any>): M | undefined {
     return this.metadataState.get(key);
   }
@@ -418,9 +427,6 @@ export class FieldNode implements FieldState<unknown> {
     });
   }
 }
-
-const EMPTY = computed(() => []);
-const FALSE = computed(() => false);
 
 /**
  * Field node of a field that has children.

@@ -55,6 +55,19 @@ export abstract class AbstractLogicNodeBuilder {
   abstract getChild(key: PropertyKey): LogicNodeBuilder;
 
   /**
+   * Gets the property keys for all children of this builder.
+   * @returns An array of property keys.
+   */
+  abstract getChildKeys(): PropertyKey[];
+
+  /**
+   * Gets all metadata logic functions for a given key.
+   * @param key The metadata key.
+   * @returns An array of logic functions.
+   */
+  abstract getMetadataFns<T>(key: MetadataKey<any, T, any>): LogicFn<any, T>[];
+
+  /**
    * Checks whether a particular `AbstractLogicNodeBuilder` has been merged into this one.
    * @param builder The builder to check for.
    * @returns True if the builder has been merged, false otherwise.
@@ -146,6 +159,24 @@ export class LogicNodeBuilder extends AbstractLogicNodeBuilder {
       }
     }
     return this.getCurrent().getChild(key);
+  }
+
+  override getChildKeys(): PropertyKey[] {
+    const keys = new Set<PropertyKey>();
+    for (const {builder} of this.all) {
+      for (const key of builder.getChildKeys()) {
+        keys.add(key);
+      }
+    }
+    return Array.from(keys);
+  }
+
+  override getMetadataFns<T>(key: MetadataKey<any, T, any>): LogicFn<any, T>[] {
+    const fns: LogicFn<any, T>[] = [];
+    for (const {builder} of this.all) {
+      fns.push(...builder.getMetadataFns(key));
+    }
+    return fns;
   }
 
   override hasLogic(builder: AbstractLogicNodeBuilder): boolean {
@@ -261,6 +292,18 @@ class NonMergeableLogicNodeBuilder extends AbstractLogicNodeBuilder {
       this.children.set(key, new LogicNodeBuilder(this.depth + 1));
     }
     return this.children.get(key)!;
+  }
+
+  override getChildKeys(): PropertyKey[] {
+    return Array.from(this.children.keys());
+  }
+
+  override getMetadataFns<T>(key: MetadataKey<any, T, any>): LogicFn<any, T>[] {
+    // LogicContainer handles the actual storage of metadata rules.
+    // We need to access the inner fns of the MetadataMergeLogic.
+    const logic = this.logic.getMetadata(key);
+    // @ts-ignore: Accessing protected fns for schema generation.
+    return (logic['fns'] ?? []) as LogicFn<any, T>[];
   }
 
   override hasLogic(builder: AbstractLogicNodeBuilder): boolean {

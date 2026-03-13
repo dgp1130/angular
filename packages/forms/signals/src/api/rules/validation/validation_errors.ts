@@ -253,6 +253,30 @@ export function emailError(
 }
 
 /**
+ * Create a oneOf error associated with the target field
+ * @param options The validation error options
+ *
+ * @category validation
+ * @experimental 21.1.0
+ */
+export function oneOfError(options: WithFieldTree<ValidationErrorOptions>): OneOfValidationError;
+/**
+ * Create a oneOf error
+ * @param options The optional validation error options
+ *
+ * @category validation
+ * @experimental 21.1.0
+ */
+export function oneOfError(
+  options?: ValidationErrorOptions,
+): WithoutFieldTree<OneOfValidationError>;
+export function oneOfError(
+  options?: ValidationErrorOptions,
+): WithOptionalFieldTree<OneOfValidationError> {
+  return new OneOfValidationError(options);
+}
+
+/**
  * Common interface for all validation errors.
  *
  * This can be returned from validators.
@@ -453,6 +477,16 @@ export class EmailValidationError extends BaseNgValidationError {
 }
 
 /**
+ * An error used to indicate that a value is not one of the allowed options.
+ *
+ * @category validation
+ * @experimental 21.1.0
+ */
+export class OneOfValidationError extends BaseNgValidationError {
+  override readonly kind = 'oneOf';
+}
+
+/**
  * An error used to indicate that a value entered in a native input does not parse.
  *
  * @category validation
@@ -497,4 +531,5 @@ export type NgValidationError =
   | PatternValidationError
   | EmailValidationError
   | StandardSchemaValidationError
-  | NativeInputParseError;
+  | NativeInputParseError
+  | OneOfValidationError;
