@@ -121,6 +121,9 @@ export class SharedStylesHost implements ɵSharedStylesHost, OnDestroy {
    */
   private readonly hosts = new Map<Node, number>();
 
+  /** Whether this instance has been destroyed. */
+  private destroyed = false;
+
   constructor(
     @Inject(DOCUMENT) private readonly doc: Document,
     @Inject(APP_ID) private readonly appId: string,
@@ -202,17 +205,40 @@ export class SharedStylesHost implements ɵSharedStylesHost, OnDestroy {
       removeElements(elements);
     }
     this.hosts.clear();
+    this.destroyed = true;
   }
 
   addHost(hostNode: Node): void {
+    // Adding a host after destruction will have no effect and is likely a bug in the caller.
+    // However, some testing scenarios with fake async appear to trigger CD after `TestBed`
+    // teardown, meaning Angular may render new components (and then immediately destroy them)
+    // after the application is destroyed, so we have to allow this to happen and no-op.
+    if (this.destroyed) return;
+
     const existingUsage = this.hosts.get(hostNode) ?? 0;
     if (existingUsage === 0) {
+      // // Add existing styles to new host
+      // for (const [style, {elements}] of this.inline) {
+      //   elements.push(this.addElement(hostNode, createStyleElement(style, this.doc)));
+      // }
+      // for (const [url, {elements}] of this.external) {
+      //   elements.push(this.addElement(hostNode, createLinkElement(url, this.doc)));
+      // }
+
       // Add existing styles to new host
       for (const [style, {elements}] of this.inline) {
-        elements.push(this.addElement(hostNode, createStyleElement(style, this.doc)));
+        // `removeHost` currently does not actually remove styles when usage drops to zero.
+        // Therefore removing a host to zero and then re-adding to one, could cause Angular
+        // to duplicate the styles on the page. This check makes sure we don't add the styles
+        // more than once.
+        if (!elements.some((e) => e.parentNode === hostNode)) {
+          elements.push(this.addElement(hostNode, createStyleElement(style, this.doc)));
+        }
       }
       for (const [url, {elements}] of this.external) {
-        elements.push(this.addElement(hostNode, createLinkElement(url, this.doc)));
+        if (!elements.some((e) => e.parentNode === hostNode)) {
+          elements.push(this.addElement(hostNode, createLinkElement(url, this.doc)));
+        }
       }
     }
 
@@ -220,6 +246,12 @@ export class SharedStylesHost implements ɵSharedStylesHost, OnDestroy {
   }
 
   removeHost(hostNode: Node): void {
+    // In some scenarios (such as an explicit `ApplicationRef.prototype.destroy` call),
+    // this instance's `ngOnDestroy` method may be called before a component is destroyed and
+    // attempts to remove its own styles. In this case, we need to no-op to avoid throwing an
+    // error.
+    if (this.destroyed) return;
+
     const usage = this.hosts.get(hostNode);
     if (typeof ngDevMode !== 'undefined' && ngDevMode && usage === undefined) {
       throw new Error('Attempted to remove a host which was not added.');
