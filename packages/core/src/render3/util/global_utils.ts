@@ -38,6 +38,7 @@ import {getSignalGraph} from './signal_debug';
 
 import {enableProfiling} from '../debug/chrome_dev_tools_performance';
 import {getTransferState} from './transfer_state_utils';
+import {registerAiTools} from '../../debug/ai';
 
 /**
  * This file introduces series of globally accessible debug tools
@@ -115,6 +116,8 @@ export function publishDefaultGlobalUtils() {
     for (const [methodName, method] of Object.entries(globalUtilsFunctions)) {
       publishGlobalUtil(methodName as CoreGlobalUtilsFunctions, method);
     }
+
+    registerAiTools();
   }
 }
 
