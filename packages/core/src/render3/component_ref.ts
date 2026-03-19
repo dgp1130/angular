@@ -185,6 +185,7 @@ function createRootLViewEnvironment(rootLViewInjector: Injector): LViewEnvironme
   }
 
   const sharedStylesHost = rootLViewInjector.get(SHARED_STYLES_HOST, null);
+  const fallbackHost = rootLViewInjector.get(DOCUMENT, getDocument() as any)?.head ?? null;
 
   return {
     rendererFactory,
@@ -193,6 +194,7 @@ function createRootLViewEnvironment(rootLViewInjector: Injector): LViewEnvironme
     ngReflect,
     tracingService,
     sharedStylesHost,
+    fallbackHost,
   };
 }
 
@@ -345,31 +347,32 @@ export class ComponentFactory<T> extends AbstractComponentFactory<T> {
       retrieveHydrationInfo(hostElement, rootViewInjector, true /* isRootView */),
     );
 
-      rootLView[HEADER_OFFSET] = hostElement;
+    rootLView[HEADER_OFFSET] = hostElement;
 
-      // Determine if the component itself uses Shadow DOM, as these components will track their own
-      // shadow roots when they are created.
-      const usesShadowDom =
-        (cmpDef.encapsulation === ViewEncapsulation.ShadowDom ||
-          cmpDef.encapsulation === ViewEncapsulation.ExperimentalIsolatedShadowDom) &&
-        !(typeof ngServerMode !== 'undefined' && ngServerMode);
-      if (!usesShadowDom) {
-        const sharedStylesHost = rootLView[ENVIRONMENT].sharedStylesHost;
-        if (sharedStylesHost) {
-          // Check the root node (containing shadow root or document) and provide stylesheets there.
-          // If the created component is detached from the document, this will be `null` and stylesheets
-          // will be tracked once the component is attached to the document.
-          const rootNode = hostElement.getRootNode?.();
-          const isShadowRoot =
-            rootNode && typeof ShadowRoot !== 'undefined' && rootNode instanceof ShadowRoot;
-          const styleHost = isShadowRoot ? rootNode : getDocument().head;
+    // Determine if the component itself uses Shadow DOM, as these components will track their own
+    // shadow roots when they are created.
+    const usesShadowDom =
+      (cmpDef.encapsulation === ViewEncapsulation.ShadowDom ||
+        cmpDef.encapsulation === ViewEncapsulation.ExperimentalIsolatedShadowDom) &&
+      !(typeof ngServerMode !== 'undefined' && ngServerMode);
+    if (!usesShadowDom) {
+      const sharedStylesHost = rootLView[ENVIRONMENT].sharedStylesHost;
+      if (sharedStylesHost) {
+        // Check the root node (containing shadow root or document) and provide stylesheets there.
+        // If the created component is detached from the document, this will be `null` and stylesheets
+        // will be tracked once the component is attached to the document.
+        const rootNode = hostElement.getRootNode?.();
+        const isShadowRoot =
+          rootNode && typeof ShadowRoot !== 'undefined' && rootNode instanceof ShadowRoot;
+        const fallbackHost = rootLView[ENVIRONMENT].fallbackHost ?? getDocument().head;
+        const styleHost = isShadowRoot ? rootNode : fallbackHost;
 
-          sharedStylesHost.addHost(styleHost);
-          (rootLView[ON_DESTROY_HOOKS] ??= []).push(
-            () => void sharedStylesHost.removeHost(styleHost),
-          );
-        }
+        sharedStylesHost.addHost(styleHost as Node);
+        (rootLView[ON_DESTROY_HOOKS] ??= []).push(
+          () => void sharedStylesHost.removeHost(styleHost as Node),
+        );
       }
+    }
 
     // rootView is the parent when bootstrapping
     // TODO(misko): it looks like we are entering view here but we don't really need to as
