@@ -1,0 +1,59 @@
+<h2>User Profile</h2>
+<p>Angular Signal-Based Form Demo</p>
+
+<form [formRoot]="f">
+  <div>
+    <label for="first-name">First Name: </label>
+    <input id="first-name" type="text" [formField]="f.firstName" placeholder="First Name" />
+    @if (f.firstName().touched() && f.firstName().invalid()) {
+      <span style="color: red"> {{ f.firstName().errors()[0]?.message }}</span>
+    }
+  </div>
+
+  <br />
+
+  <div>
+    <label for="last-name">Last Name: </label>
+    <input id="last-name" type="text" [formField]="f.lastName" placeholder="Last Name" />
+    @if (f.lastName().touched() && f.lastName().invalid()) {
+      <span style="color: red"> {{ f.lastName().errors()[0]?.message }}</span>
+    }
+  </div>
+
+  <br />
+
+  <div>
+    <label for="age">Age: </label>
+    <input id="age" type="number" [formField]="f.age" placeholder="Age" />
+    @if (f.age().touched() && f.age().invalid()) {
+      <span style="color: red"> {{ f.age().errors()[0]?.message }}</span>
+    }
+  </div>
+
+  <br />
+
+  <fieldset>
+    <legend>Hobbies</legend>
+    <button type="button" (click)="addHobby()">Add Hobby</button>
+    <br /><br />
+
+    @if (f.hobbies().touched() && f.hobbies().errors().length > 0) {
+      <span style="color: red"> {{ f.hobbies().errors()[0]?.message }}</span>
+      <br /><br />
+    }
+
+    @for (hobby of f.hobbies; track hobby) {
+      <div style="margin-bottom: 8px">
+        <input type="text" [formField]="hobby" placeholder="Hobby name" />
+        <button type="button" (click)="removeHobby($index)">Remove</button>
+        @if (hobby().touched() && hobby().invalid()) {
+          <span style="color: red"> {{ hobby().errors()[0]?.message }}</span>
+        }
+      </div>
+    }
+  </fieldset>
+
+  <br />
+
+  <button type="submit" [disabled]="f().invalid()">Save Profile</button>
+</form>
